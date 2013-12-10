@@ -247,6 +247,12 @@ public class Decode_Mail {
         }
     }
 	
+	
+	/***
+	 * ¹¦ÄÜ²âÊÔº¯Êý
+	 * @param args
+	 * @throws FileNotFoundException
+	 */
 	public static void main(String[] args) throws FileNotFoundException {
 		interpreter = new PythonInterpreter();  
 		interpreter.execfile("F:\\MailProject\\lxc\\decodemail.py");
