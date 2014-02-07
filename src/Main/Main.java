@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import org.python.antlr.PythonParser.return_stmt_return;
 import org.python.core.PyFunction;
@@ -44,12 +46,17 @@ public class Main {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method
-				String filePath = frame.dictionaryLabel.getText()+"-decode";
+				String filePath = frame.dictionaryText.getText()+"-decode";
 				if(filePath==""){return ;}
 				try{
+					//System.out.println(filePath);
 					dealFiles_feature_extraction(filePath);
 				}catch (FileNotFoundException e1){
 					System.out.println(e1);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					//e1.printStackTrace();
+					return ;
 				}
 				
 			}
@@ -72,7 +79,7 @@ public class Main {
 		File root = new File(filePath);    //打开指定路径的文件
 		if(root.exists() && root.isDirectory()){    //若是文件夹则将里面的文件解码
 			PythonInterpreter interpreter = new PythonInterpreter();  
-			interpreter.execfile("F:\\MailProject\\lxc\\decodemail.py");
+			interpreter.execfile("src\\email_decode\\decodemail.py");
 			PyFunction func = (PyFunction)interpreter.get("decodebody_str",PyFunction.class);
 			
 			//System.out.println(filePath);
@@ -91,22 +98,51 @@ public class Main {
 	/**
 	 * 特征提取
 	 * @param filePath
-	 * @throws FileNotFoundException
+	 * @throws IOException 
 	 */
-	private static void dealFiles_feature_extraction(String filePath) throws FileNotFoundException{
+	private static void dealFiles_feature_extraction(String filePath) throws IOException{
 		File root = new File(filePath);
 		if(root.exists() && root.isDirectory()){    //若是文件夹则将里面的文件解码			
-			System.out.println(root.getAbsolutePath());  //test(文件夹路径)
-			File fileRes=new File(filePath+"result");
-			//todo
-			File[] files = root.listFiles();
-			String featureString="";
-			for(File file:files){
-				featureString+=extraction.feature_extraction(file.getAbsolutePath())+"\n";
+			System.out.println(root.getAbsolutePath());
+			File fileRes=new File(filePath+"result.txt");
+			fileRes.delete();
+			if(fileRes.createNewFile()==true){
+				File[] files = root.listFiles();
+				String featureString="";
+				for(File file:files){
+					featureString+=extraction.feature_extraction(file.getAbsolutePath())+"\r\n";
+				}
+				//写数据到result文件
+				writeByFileWrite(fileRes.getAbsolutePath(), featureString);
 			}
-			//写数据到result文件
+			else{
+				System.out.println("创建文件失败！");
+				return ;
+			}
 		}else{
 			System.out.println("文件夹不存在！");
+			return ;
 		}
+	}
+	
+	/**
+	 * 向文件写数据
+	 * @param _sDestFile
+	 * @param _sContent
+	 * @throws IOException
+	 */
+	private static void writeByFileWrite(String _sDestFile, String _sContent) throws IOException {
+			FileWriter fw = null;
+			try {
+				fw = new FileWriter(_sDestFile);
+				fw.write(_sContent);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			} finally {
+				if (fw != null) {
+					fw.close();
+					fw = null;
+				}
+			}
 	}
 }
