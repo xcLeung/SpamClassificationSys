@@ -5,9 +5,6 @@ import email
 import os
 import sys
 
-
-
-
 def decodebody(file):                        
 	fp = open(file,"r")
 	msg = email.message_from_file(fp)   
