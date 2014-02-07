@@ -6,6 +6,6 @@ public class extraction {
 	
 	
 	public static String feature_extraction(String filePath){
-		return  "";
+		return  "lxc";
 	}
 }
