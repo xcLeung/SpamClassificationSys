@@ -109,8 +109,9 @@ public class Main {
 			if(fileRes.createNewFile()==true){
 				File[] files = root.listFiles();
 				String featureString="";
+				extraction myExtraction = new extraction();
 				for(File file:files){
-					featureString+=extraction.feature_extraction(file.getAbsolutePath())+"\r\n";
+					featureString+=myExtraction.feature_extraction(file.getAbsolutePath())+"\r\n";
 				}
 				//写数据到result文件
 				writeByFileWrite(fileRes.getAbsolutePath(), featureString);
