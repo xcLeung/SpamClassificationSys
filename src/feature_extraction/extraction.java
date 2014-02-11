@@ -2,12 +2,16 @@ package feature_extraction;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.omg.CORBA.PUBLIC_MEMBER;
 import org.python.antlr.PythonParser.else_clause_return;
 import org.python.antlr.PythonParser.return_stmt_return;
+import org.python.antlr.ast.boolopType;
 import org.python.constantine.Constant;
 import org.python.google.common.primitives.UnsignedBytes;
 
@@ -84,8 +88,8 @@ public class extraction {
 	{
 		String cc=String.valueOf(c);
 		byte[] han=cc.getBytes();
-		for(int i=0;i<han.length;i++)
-			System.out.println(String.format("%1$#x", han[i]));
+		//for(int i=0;i<han.length;i++)
+		//	System.out.println(String.format("%1$#x", han[i]));
 		int label = 0;
 		if ( han[0] >= (byte)0xB0 && han[0] <= (byte)0xF7 && han[1] >= (byte)0xA1 && han[1] <= (byte)0xFE) {
 			label = 1; //普通汉字
@@ -101,6 +105,58 @@ public class extraction {
 		return label;
 	}
 	
+	/***
+	 * 根据正则表达式匹配串
+	 * @param reg
+	 * @return
+	 */
+	private int CountMatchedWords(String text,String reg){
+		if(text=="" || text.length()<=0) 
+			return 0;
+		int cnt=0,num=-1;
+		boolean isUrl=false;
+		if(reg.indexOf("[0-9]")!=-1)
+			num=0;
+		if(reg.indexOf("[a-zA-Z]+://.+?[^\\s\"'<>/]+")!=-1)
+			isUrl=true;
+		String[] goodurl={".com", ".com.cn", ".com.tw", ".net.cn", ".hk", ".edu", ".edu.cn", ".org", ".net", ".gov", ".gov.cn", ".org.cn"};
+		String[] ignoreStrings={"http://www.3c.org", "http://schemas.microsoft.com", "http://www.w3.org"};
+		Pattern p=Pattern.compile(reg);
+		Matcher m=p.matcher(text);
+		int i=0;
+		while(m.find()){
+			boolean flag=true;
+			String str_st=m.group(i);
+			if(num!=-1 && str_st.length()>=8 && str_st.length()<=11)
+				num++;
+			for(String str:ignoreStrings){
+				if(str_st.indexOf(str)!=-1){
+					flag=false;
+					break;
+				}
+			}
+			if(flag){
+				if(isUrl){
+					boolean isbadurl=true;
+					for(String str:goodurl){
+						if(str_st.indexOf(str)!=-1){
+							isbadurl=false;
+							break;
+						}
+					}
+					if(isbadurl)
+						cnt++;
+				}else{
+					cnt++;
+				}
+			}
+			i+=1;
+		}
+		if(num!=-1)
+			cnt=num;
+		return cnt;
+	}
+	
 	//******************************特征提取开始*****************************************
 	
 	/***
@@ -108,9 +164,8 @@ public class extraction {
 	 * @param buf
 	 * @return
 	 */
-	private String GetShortLine(ArrayList<String> buf){
+	private String GetShortLine(ArrayList<String> buf,int base){
 		String res="";
-		int base=1;
 		if(buf.size()<=0)
 			return "0";
 		int cnt=0;
@@ -127,9 +182,8 @@ public class extraction {
 	 * @param buf
 	 * @return
 	 */
-	private String GetCharCnt(ArrayList<String> buf){
+	private String GetCharCnt(ArrayList<String> buf,int base){
 		String res="";
-		int base=10;
 		if(buf.size()<=0){
 			while(res.length()<6)
 				res+="0";
@@ -176,6 +230,7 @@ public class extraction {
 			res += GetCodeChar(sumO / base);//其他字母
 			res += GetCodeChar(sumN / base);//数字
 			res += GetCodeChar(sumB / base);//标点符号
+			while (res.length() < 9) res += '*';//占9个位置
 			return res;
 		}
 	}
@@ -185,9 +240,8 @@ public class extraction {
 	 * @param buf
 	 * @return
 	 */
-	private String GetSampTradArrange(ArrayList<String> buf){
+	private String GetSampTradArrange(ArrayList<String> buf,int base){
 		String res="";
-		int base=1;
 		if(buf.size()<=0){
 			res+="0";
 			while(res.length()<3)
@@ -223,17 +277,137 @@ public class extraction {
 		}
 	}
 	
-	private String GetKeyWords(ArrayList<String> buf){
+	/***
+	 * 统计关键字
+	 * @param buf
+	 * @param base
+	 * @return
+	 */
+	private String GetKeyWords(ArrayList<String> buf,int base){
 		String res="";
 		if(buf.size()<=0){
 			while(res.length()<4) res+="0";
 			while(res.length()<6) res+="*";
 			return res;
 		}else{
+			ArrayList<String> lKeyWord=new ArrayList<String>();
+			lKeyWord.add("[qQ扣]{2}");
+			lKeyWord.add("[a-zA-Z]+://[^\\s\"'>]+");
+			lKeyWord.add("<[iI][mM][gG].+?\\s*?[sS][rR][cC]=(['\"]?)([^>\\s]+).*?>|background.{1,60}?(.jpg|.gif|.png|.jpeg|.bmp)");
+			lKeyWord.add("[a-zA-Z]+://.+?[^\\s\"'<>/]+");
+			int WordCnt=0;
+			for(String reg:lKeyWord){
+				int c=0;
+				for(String str:buf){
+					if(WordCnt==1){//第二个正则
+						int html_st=str.indexOf("<html");
+						if(html_st!=-1){
+							int html_end=str.indexOf(">",html_st);
+							String url=str.substring(html_st, html_end);
+							c+=CountMatchedWords(url, reg);
+							continue;
+						}
+					}
+					c+=CountMatchedWords(str, reg);
+				}
+				res += GetCodeChar(c / base);//各个字符串出现的次数
+				WordCnt+=1;
+			}
+			while (res.length() < 6) res += '*';//前10个是关键字，第11个是总数
 			return res;
 		}
 	}
 	
+	private String GetContentKeyWords(ArrayList<String> buf,int base){
+		String res="";
+		if(buf.size()<=0){
+			while (res.length() < 1) res += '0';
+			while (res.length() < 5) res += '*';
+			return res;
+		}else{
+			String reg="[0-9]+";
+			int c=0;
+			for(String str:buf){
+				c+=CountMatchedWords(str, reg);	
+			}
+			res += GetCodeChar(c / base);
+			while(res.length()<5) res+="*";
+			return res;
+		}
+	}
+	
+	/***
+	 * 根据文件好坏单词正则统计
+	 * @param buf
+	 * @param base
+	 * @param isgood
+	 * @return
+	 */
+	private String GetChineseKeyWords(ArrayList<String> buf,int base,boolean isgood){
+		String res="";
+		if(buf.size()<=0){
+			return "0";
+		}else{
+			String data="";
+			for(String str:buf){
+				char[] ch=str.toCharArray();
+				for(int i=0;i<ch.length;i++){
+					char c=ch[i];
+					if(c>0x7f){
+						int label=hanzi_feature_class(c);
+						if(label==1){
+							data+=c;
+						}
+					}
+				}
+			}	
+			String filename="";
+			String goodfilename="";
+			String badfilename="";
+			String[] goodkeyword={};
+			String[] badkeywordString={"真相", "禁闻", "保命", "退党"};
+			ArrayList<String> keyword=new ArrayList<String>();
+			if(isgood){
+				filename=goodfilename;
+				for(String str:goodkeyword){
+					keyword.add(str);
+				}
+			}else{
+				filename=badfilename;
+				for(String str:badkeywordString){
+					keyword.add(str);
+				}
+			}
+			File file=new File(filename);
+			if(file.exists()){
+				try {
+					Scanner input=new Scanner(file);
+					while(input.hasNextLine()){
+						String str=input.nextLine();
+						keyword.add(str);
+					}
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			int cnt=0;
+			for(String str:keyword){
+				int c=CountMatchedWords(data, str);
+				if(c>0)
+					cnt++;
+			}
+			res += GetCodeChar(cnt / base);//总数
+			return res;
+		}
+	}
+	
+	/***
+	 * 统计空格
+	 * @param buf
+	 * @param base
+	 * @return
+	 */
 	private String GetSpaceCnt(ArrayList<String> buf,int base){
 		String res="";
 		if(buf.size()<=0){
@@ -267,10 +441,15 @@ public class extraction {
 	 */
 	private String GetSubjectCode(){
 		String res="";
-		res+=GetShortLine(m_Subject);//1
-		res+=GetCharCnt(m_Subject);//9
-		res+=GetSampTradArrange(m_Subject);//3
-		res+=GetKeyWords(m_Subject);//6
+		res+=GetShortLine(m_Subject,1);//1
+		res+=GetCharCnt(m_Subject,1);//9
+		res+=GetSampTradArrange(m_Subject,1);//3
+		res+=GetKeyWords(m_Subject,1);//6
+		//res+=GetContentKeyWords(m_Subject, 1);//5
+		res+=GetChineseKeyWords(m_Subject,1,true);//1
+		res+=GetChineseKeyWords(m_Subject,1,false);//1
+		res+=GetSpaceCnt(m_Subject, 1);//1
+		System.out.println("Code长度:"+res.length());
 		while(res.length()<m_SubjectCodeLen)
 			res+="*";
 		return res;
@@ -282,8 +461,10 @@ public class extraction {
 	 */
 	private String GetContentCode(){
 		String res="";
-		res+=GetShortLine(m_Content);//1
-		//res+=GetCharCnt(m_Content);//9
+		res+=GetShortLine(m_Content,1);//1
+		res+=GetCharCnt(m_Content,10);//9
+		res+=GetSampTradArrange(m_Content,1);//3
+		//res+=GetKeyWords(m_Content,1);//6
 		while(res.length()<m_ContentCodeLen)
 			res+="*";
 		return res;
