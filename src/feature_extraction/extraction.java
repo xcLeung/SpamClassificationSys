@@ -126,13 +126,15 @@ public class extraction {
 		int i=0;
 		while(m.find()){
 			boolean flag=true;
-			String str_st=m.group(i);
+			String str_st=m.group();
 			if(num!=-1 && str_st.length()>=8 && str_st.length()<=11)
 				num++;
-			for(String str:ignoreStrings){
-				if(str_st.indexOf(str)!=-1){
-					flag=false;
-					break;
+			if(num==-1){
+				for(String str:ignoreStrings){
+					if(str_st.indexOf(str)!=-1){
+						flag=false;
+						break;
+					}
 				}
 			}
 			if(flag){
@@ -150,7 +152,6 @@ public class extraction {
 					cnt++;
 				}
 			}
-			i+=1;
 		}
 		if(num!=-1)
 			cnt=num;
@@ -445,12 +446,12 @@ public class extraction {
 		res+=GetCharCnt(m_Subject,1);//9
 		res+=GetSampTradArrange(m_Subject,1);//3
 		res+=GetKeyWords(m_Subject,1);//6
-		//res+=GetContentKeyWords(m_Subject, 1);//5
+		res+=GetContentKeyWords(m_Subject, 1);//5
 		res+=GetChineseKeyWords(m_Subject,1,true);//1
 		res+=GetChineseKeyWords(m_Subject,1,false);//1
 		res+=GetSpaceCnt(m_Subject, 1);//1
 		System.out.println("Code³¤¶È:"+res.length());
-		while(res.length()<m_SubjectCodeLen)
+		while(res.length()<m_SubjectCodeLen)//5
 			res+="*";
 		return res;
 	}
