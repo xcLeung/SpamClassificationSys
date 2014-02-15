@@ -67,32 +67,36 @@ def decodebody_str(source,object):
 	fp = open(source,"r")
 	output = open(object,"a")
 	mail = email.message_from_file(fp)  
-	
+	lFileName=[]
 	for par in mail.walk():               #循环信件中的每一个mime数据块
 		if not par.is_multipart():     #判断是否属于multipart，不是的话其实是邮件的注释部分，没作用
 			res = ''
 			fname = None
 			name = par.get_param("name")    #如果有附件，将会取出附件名			
 			if name:
-				print name
+				#print name
 				#print par.get_content_type()
-				charset =  par.get_param("charset")
+				#charset =  par.get_param("charset")
 				#print charset
 				try:
 					h = email.Header.Header(name,)
 				except:
 					h = email.Header.Header(name,"gbk")
-				print h
+				#print h
 				dh = email.Header.decode_header(h)
 				print dh
 				fname = dh[0][0]
 				print fname
+				lFileName.append(fname);
 			else:			
 				output.write(par.get_payload(decode=True) + "\n\n")
-	if fname==None:
+	if not lFileName:
 		output.write("\nNo Attachment")
 	else:
-		output.write("Attachment:" + fname)
+		str="Attachment:"
+		for sFileName in lFileName:
+			str+=sFileName+" "
+		output.write(str)
 	
 	fp.close()
 	output.close()
