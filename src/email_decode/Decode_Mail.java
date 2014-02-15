@@ -153,7 +153,7 @@ public class Decode_Mail {
 				}else if(strSubject.equalsIgnoreCase("Subject:")){
 					strSubject="无";
 				}
-				output.println("主题："+strSubject);
+				output.println("主题:"+strSubject);
 				
 				
 				System.out.println(strFrom);
@@ -163,12 +163,12 @@ public class Decode_Mail {
 					}
 					strFrom=decodeText(strFrom);
 					InternetAddress ia = new InternetAddress(strFrom);
-					output.println("发件人："+ia.getPersonal()+" "+ia.getAddress());
+					output.println("发件人:"+ia.getPersonal()+" "+ia.getAddress());
 				}else if(strFrom.equalsIgnoreCase("From:")){
 					strFrom="无";
-					output.println("发件人："+strFrom);
+					output.println("发件人:"+strFrom);
 				}else{
-					output.println("发件人："+strFrom);
+					output.println("发件人:"+strFrom);
 				}
 			
 					
@@ -188,10 +188,10 @@ public class Decode_Mail {
 				}else{
 					strTo="无";
 				}
-				output.println("收件人：\r\n"+strTo);
+				output.println("收件人:\r\n"+strTo);
 				
 				if (strDate.length() > 10) {
-                    output.println("发送日期："+strDate + "\r\n");
+                    output.println("发送日期:"+strDate + "\r\n");
                 }
 				
 				input.close();
