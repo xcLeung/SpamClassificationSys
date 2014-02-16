@@ -32,6 +32,8 @@ public class extraction {
 	private ArrayList<String> m_Subject=new ArrayList<String>();
 	private int m_SubjectCodeLen=32;
 	
+	private ArrayList<String> m_AttachNames=new ArrayList<String>();
+	
 	private void GetFileContent(String filePath){
 		File resfile = new File(filePath);
 		String res="";
@@ -40,15 +42,23 @@ public class extraction {
 				Scanner input = new Scanner(resfile);
 				while(input.hasNextLine()){
 					String str=input.nextLine();
-					if(str.contains("主题")){
-						String[] result=str.split(":");
-						if(result.length==2){
-							m_Subject.add(result[1]);
+					if(str.contains("主题")){//主题
+						int iStartIndex=str.indexOf(":");
+						String result=str.substring(iStartIndex+1);
+						m_Subject.add(result);
+						System.out.println("主题："+result);
+						continue;
+					}else if(str.contains("Attachment")){//附件
+						int iStartIndex=str.indexOf(":");
+						String sTmp=str.substring(iStartIndex+1);
+						String[] result=sTmp.split("&&");
+						for(String sFileName:result){
+							m_AttachNames.add(sFileName);
+							System.out.println(sFileName);
 						}
-						System.out.println(m_Subject);
 						continue;
 					}
-					m_Content.add(str);
+					m_Content.add(str);//其他行
 				}
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -434,6 +444,82 @@ public class extraction {
 		}
 	}
 	
+	/***
+	 * 统计附件信息
+	 * @param buf
+	 * @param base
+	 * @return
+	 */
+	private String GetAttachInfoCode(ArrayList<String> buf,int base){
+		String res="";
+		int imagenum = 0, comprenum = 0, othernum = 0;
+		for(String str:buf){
+			if(str.contains(".jpg")
+			  || str.contains(".bmp")
+			  || str.contains(".gif")
+			  || str.contains(".png")
+			  || str.contains(".jpeg")
+			){
+				imagenum+=1;
+			}else if(str.contains(".rar")
+					|| str.contains(".zip")
+					|| str.contains(".iso")
+					|| str.contains(".7z")
+					){
+				comprenum+=1;
+			}else
+				othernum+=1;
+		}
+		res += GetCodeChar(buf.size() / base);//附件数量
+		res += GetCodeChar(imagenum / base);//图片数量
+		res += GetCodeChar(comprenum / base);//压缩文件数量
+		res += GetCodeChar(othernum / base);//其他文件数量
+		while(res.length()<6)
+			res+="*";
+		return res;
+	}
+	
+	private String GetOtherInfo(ArrayList<String> buf){
+		String res="";  
+		int iContentlen=0;
+		for(String str:buf){
+			iContentlen+=str.length();
+		}
+		iContentlen/=50;
+		res+=GetCodeChar(iContentlen);
+		res+="000";
+		while(res.length()<7)
+			res+="*";
+		return res;
+	}
+	
+	/***
+	 * 获取整份邮件的简体中文数目
+	 * @param buf
+	 * @param base
+	 * @return
+	 */
+	private String GetHtmlChineseWords(ArrayList<String> buf,int base){
+		String res="";
+		if(buf.size()<=0){
+			return "0";
+		}else{
+			int iWordCnt=0;
+			for(String str:buf){
+				char[] ch=str.toCharArray();
+				for(int i=0;i<ch.length;i++){
+					char c=ch[i];
+					int label=hanzi_feature_class(c);
+					if(label==1){
+						iWordCnt+=1;
+					}
+				}
+			}
+			res+=GetCodeChar(iWordCnt/base);
+			return res;
+		}
+	}
+	
 	//******************************特征提取结束*****************************************
 	
 	/***
@@ -465,7 +551,13 @@ public class extraction {
 		res+=GetShortLine(m_Content,1);//1
 		res+=GetCharCnt(m_Content,10);//9
 		res+=GetSampTradArrange(m_Content,1);//3
-		//res+=GetKeyWords(m_Content,1);//6
+		res+=GetKeyWords(m_Content,1);//6
+		res+=GetContentKeyWords(m_Content, 1);//5
+		res+=GetChineseKeyWords(m_Content,1,true);//1
+		res+=GetChineseKeyWords(m_Content,1,false);//1
+		res+=GetAttachInfoCode(m_AttachNames,1);//6
+		res+=GetOtherInfo(m_Content);//7
+		res+=GetHtmlChineseWords(m_Content, 10);//1
 		while(res.length()<m_ContentCodeLen)
 			res+="*";
 		return res;
@@ -485,6 +577,7 @@ public class extraction {
 	private void Release(){
 		m_Content.clear();
 		m_Subject.clear();
+		m_AttachNames.clear();
 	}
 	
 	/***
@@ -509,7 +602,7 @@ public class extraction {
 	 * @throws FileNotFoundException
 	 */
 	public static void main(String[] args) throws FileNotFoundException {	
-		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1-decode\\errorhead1.eml.txt";
+		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1-decode\\attach.eml.txt";
 		System.out.println("特征提取文件："+filePath);
 		extraction myExtraction=new extraction();
 		String testString=myExtraction.feature_extraction(filePath);
