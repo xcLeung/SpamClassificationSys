@@ -91,11 +91,11 @@ def decodebody_str(source,object):
 			else:			
 				output.write(par.get_payload(decode=True) + "\n\n")
 	if not lFileName:
-		output.write("\nNo Attachment")
+		output.write("\nNoAttachment")
 	else:
 		str="Attachment:"
 		for sFileName in lFileName:
-			str+=sFileName+" "
+			str+=sFileName+"&&"
 		output.write(str)
 	
 	fp.close()
