@@ -15,6 +15,7 @@ import javax.mail.internet.MimeUtility;
 
 import org.python.util.PythonInterpreter;
 import org.python.util.install.*;  
+import org.python.antlr.PythonParser.else_clause_return;
 import org.python.antlr.PythonParser.return_stmt_return;
 import org.python.core.*;
 import org.python.core.util.*;
@@ -78,6 +79,7 @@ public class Decode_Mail {
 						System.out.println(strDate);						
 					}else if(strFrom.equalsIgnoreCase(str)){   //提取From
 						str=input.next();
+						str=str.replace("\"","");
 						if (str.startsWith("=?")) {							
                             strFrom = str;
                             str = input.next();
@@ -142,7 +144,7 @@ public class Decode_Mail {
 				File outputfile = new File(Path+"\\"+file.getName()+".txt");
 				PrintWriter output = new PrintWriter(outputfile);
 				output.println("源邮件："+file.getAbsolutePath());
-				output.println("解码邮件："+file.getAbsolutePath()+".txt\r\n\r\n");
+				output.println("解码邮件："+file.getAbsolutePath()+".txt");
 				
 				
 				if(strSubject.startsWith("=?")){
@@ -176,24 +178,30 @@ public class Decode_Mail {
 				String[] Tos = strTo.split(",");
 				if(!strTo.startsWith("To:")){				
 					strTo="";
+					int iCnt=0;
 					for(String var:Tos){
-						if(strTo.startsWith("=?")){
+						if(var.startsWith("=?")){
 							if(var.indexOf("=?x-unknown")>=0){
 								var = var.replaceAll("x-unknown", "utf-8");
 							}
 							var=decodeText(var);
 						}
-						strTo+=var+"\r\n";
+						if(iCnt==Tos.length-1)
+							strTo+=var;
+						else
+							strTo+=var+"&&";
+						iCnt+=1;
 					}
 				}else{
 					strTo="无";
 				}
 				output.println("收件人:\r\n"+strTo);
 				
+				String sDateInfo="发送日期:";
 				if (strDate.length() > 10) {
-                    output.println("发送日期:"+strDate + "\r\n");
+					sDateInfo+=strDate;          
                 }
-				
+				output.println(sDateInfo + "\r\n");
 				input.close();
 				output.close();
 				
@@ -255,10 +263,10 @@ public class Decode_Mail {
 	 */
 	public static void main(String[] args) throws FileNotFoundException {
 		interpreter = new PythonInterpreter();  
-		interpreter.execfile("F:\\MailProject\\lxc\\decodemail.py");
+		interpreter.execfile("src\\email_decode\\decodemail.py");
 		PyFunction func = (PyFunction)interpreter.get("decodebody_str",PyFunction.class);
 		
-		String filePath = "F:\\MailProject\\lxc\\emailtest1\\errorhead3.eml";
+		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1\\froms1.eml";
 		File file = new File(filePath);	
 		if(file.exists()){
 			String path=file.getParent();
