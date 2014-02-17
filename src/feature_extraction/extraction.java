@@ -1,7 +1,10 @@
 package feature_extraction;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -26,11 +29,15 @@ public class extraction {
 	final int NUMBER=3;
 	
 	private ArrayList<String> m_Content=new ArrayList<String>();
+	private ArrayList<String> m_HtmlContent=new ArrayList<String>();
 	private int m_ContentCodeLen=64;
 	private String m_Code;
 	
 	private ArrayList<String> m_Subject=new ArrayList<String>();
 	private int m_SubjectCodeLen=32;
+	private ArrayList<String> m_From=new ArrayList<String>();
+	
+	private int m_HeaderLen=0;
 	
 	private ArrayList<String> m_AttachNames=new ArrayList<String>();
 	
@@ -39,33 +46,75 @@ public class extraction {
 		String res="";
 		if(resfile.exists()){
 			try {
-				Scanner input = new Scanner(resfile);
-				while(input.hasNextLine()){
-					String str=input.nextLine();
-					if(str.contains("主题")){//主题
-						int iStartIndex=str.indexOf(":");
-						String result=str.substring(iStartIndex+1);
-						m_Subject.add(result);
+				BufferedReader bw=new BufferedReader(new FileReader(resfile));
+				String sLine="";
+				int iLineCnt=0;
+				while((sLine=bw.readLine())!=null){
+					iLineCnt+=1;
+					if(sLine.contains("主题")){//主题
+						int iStartIndex=sLine.indexOf(":");
+						String result=sLine.substring(iStartIndex+1);
+						if(result!="无"){
+							m_Subject.add(result);
+							m_HeaderLen+=result.length();
+						}
 						System.out.println("主题："+result);
+						continue;					
+					}else if(sLine.contains("发件人")){//发件人
+						int iStartIndex=sLine.indexOf(":");
+						String result=sLine.substring(iStartIndex+1);
+						if(result!="无"){
+							m_From.add(result);
+							m_HeaderLen+=result.length();
+						}
+						System.out.println("发件人："+result);
 						continue;
-					}else if(str.contains("Attachment")){//附件
-						int iStartIndex=str.indexOf(":");
-						String sTmp=str.substring(iStartIndex+1);
+					}
+					else if(sLine.contains("Attachment")){//附件
+						int iStartIndex=sLine.indexOf(":");
+						String sTmp=sLine.substring(iStartIndex+1);
 						String[] result=sTmp.split("&&");
 						for(String sFileName:result){
 							m_AttachNames.add(sFileName);
 							System.out.println(sFileName);
 						}
 						continue;
+					}else if(sLine.contains("NoAttachment")) continue;
+					if(iLineCnt>8)
+						m_HtmlContent.add(sLine);//其他行
+					else if(iLineCnt>2 && iLineCnt<9){
+						m_HeaderLen+=sLine.length();
 					}
-					m_Content.add(str);//其他行
 				}
-			} catch (FileNotFoundException e) {
+				m_HeaderLen-=9;//减去提示语的字符
+			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}else
 			return ;
+	}
+	
+	/***
+	 * 去除标签
+	 */
+	private void GetHideContent(){
+		for(String str:m_HtmlContent){
+			String res="";
+			int iStart=-1;
+			int iEnd=-1;
+			int index=0;
+			while(index<str.length()){
+				if((iStart=str.indexOf("<",index))==-1 || (iEnd=str.indexOf(">",index))==-1){
+					res+=str.substring(index);
+					break;
+				}else{
+					res+=str.substring(index, iStart);
+					index=iEnd+1;
+				}
+			}
+			m_Content.add(res);
+		}
 	}
 	
 	/***
@@ -479,15 +528,21 @@ public class extraction {
 		return res;
 	}
 	
-	private String GetOtherInfo(ArrayList<String> buf){
+	private String GetOtherInfo(){
 		String res="";  
 		int iContentlen=0;
-		for(String str:buf){
+		for(String str:m_HtmlContent){
 			iContentlen+=str.length();
 		}
 		iContentlen/=50;
 		res+=GetCodeChar(iContentlen);
 		res+="000";
+		iContentlen=0;
+		for(String str:m_Content){
+			iContentlen+=str.length();
+		}
+		res+=GetCodeChar(iContentlen);
+		res+=GetCodeChar((m_HeaderLen*16)/(100*1024));
 		while(res.length()<7)
 			res+="*";
 		return res;
@@ -518,6 +573,14 @@ public class extraction {
 			res+=GetCodeChar(iWordCnt/base);
 			return res;
 		}
+	}
+	
+	private String GetFromAddrInfo(int base){
+		String res="";
+		String[] topdomain= {".net.cn", ".org.cn", ".edu.cn", ".com.cn", ".gov.cn", ".com.hk", ".com.tw"};
+		String[] normaldomain = {".com", ".cn", ".net", ".org", ".net", ".tw", ".hk", ".edu", ".gov"};
+		/*------------------@前面的字符串排列统计-----------------------*/
+		return res;
 	}
 	
 	//******************************特征提取结束*****************************************
@@ -551,13 +614,14 @@ public class extraction {
 		res+=GetShortLine(m_Content,1);//1
 		res+=GetCharCnt(m_Content,10);//9
 		res+=GetSampTradArrange(m_Content,1);//3
-		res+=GetKeyWords(m_Content,1);//6
+		res+=GetKeyWords(m_HtmlContent,1);//6
 		res+=GetContentKeyWords(m_Content, 1);//5
 		res+=GetChineseKeyWords(m_Content,1,true);//1
 		res+=GetChineseKeyWords(m_Content,1,false);//1
 		res+=GetAttachInfoCode(m_AttachNames,1);//6
-		res+=GetOtherInfo(m_Content);//7
-		res+=GetHtmlChineseWords(m_Content, 10);//1
+		res+=GetOtherInfo();//7
+		res+=GetHtmlChineseWords(m_HtmlContent, 10);//1
+		res+=GetFromAddrInfo(1);//4
 		while(res.length()<m_ContentCodeLen)
 			res+="*";
 		return res;
@@ -575,9 +639,11 @@ public class extraction {
 	}
 	
 	private void Release(){
+		m_HeaderLen=0;
 		m_Content.clear();
 		m_Subject.clear();
 		m_AttachNames.clear();
+		m_HtmlContent.clear();
 	}
 	
 	/***
@@ -588,8 +654,13 @@ public class extraction {
 	public String feature_extraction(String filePath){
 		Release();
 		GetFileContent(filePath);
+		GetHideContent();
 		System.out.println("正文内容：");
 		for(String str:m_Content){
+			System.out.println(str);
+		}
+		System.out.println("html内容：");
+		for(String str:m_HtmlContent){
 			System.out.println(str);
 		}
 		m_Code=GetAllCode();
