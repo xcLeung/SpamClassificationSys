@@ -28,12 +28,15 @@ public class extraction {
 	final int ENGLISH=2;
 	final int NUMBER=3;
 	
-	private ArrayList<String> m_Content=new ArrayList<String>();
-	private ArrayList<String> m_HtmlContent=new ArrayList<String>();
+	private ArrayList<String> m_ContentList=new ArrayList<String>();
+	private ArrayList<String> m_HtmlContentList=new ArrayList<String>();
+	private String m_Content="";
+	private String m_HtmlContent="";
 	private int m_ContentCodeLen=64;
 	private String m_Code;
 	
-	private ArrayList<String> m_Subject=new ArrayList<String>();
+	private ArrayList<String> m_SubjectList=new ArrayList<String>();
+	private String m_Subject="";
 	private int m_SubjectCodeLen=32;
 	private ArrayList<String> m_From=new ArrayList<String>();
 	
@@ -41,6 +44,10 @@ public class extraction {
 	
 	private ArrayList<String> m_AttachNames=new ArrayList<String>();
 	
+	/***
+	 * 根据格式获取需要的信息
+	 * @param filePath
+	 */
 	private void GetFileContent(String filePath){
 		File resfile = new File(filePath);
 		String res="";
@@ -55,7 +62,8 @@ public class extraction {
 						int iStartIndex=sLine.indexOf(":");
 						String result=sLine.substring(iStartIndex+1);
 						if(result!="无"){
-							m_Subject.add(result);
+							m_Subject+=result;
+							m_SubjectList.add(result);
 							m_HeaderLen+=result.length();
 						}
 						System.out.println("主题："+result);
@@ -80,9 +88,11 @@ public class extraction {
 						}
 						continue;
 					}else if(sLine.contains("NoAttachment")) continue;
-					if(iLineCnt>8)
-						m_HtmlContent.add(sLine);//其他行
-					else if(iLineCnt>2 && iLineCnt<9){
+					if(iLineCnt>8){
+						m_HtmlContent+=sLine;//其他行
+						m_HtmlContentList.add(sLine);
+					}
+					else if(iLineCnt>2 && iLineCnt<9){//统计邮件头数据长度
 						m_HeaderLen+=sLine.length();
 					}
 				}
@@ -98,22 +108,29 @@ public class extraction {
 	/***
 	 * 去除标签
 	 */
-	private void GetHideContent(){
-		for(String str:m_HtmlContent){
-			String res="";
-			int iStart=-1;
-			int iEnd=-1;
-			int index=0;
-			while(index<str.length()){
-				if((iStart=str.indexOf("<",index))==-1 || (iEnd=str.indexOf(">",index))==-1){
-					res+=str.substring(index);
-					break;
-				}else{
-					res+=str.substring(index, iStart);
-					index=iEnd+1;
-				}
+	private String DeleteHtmlLabel(String buf) {
+		String res = "";
+		int iStart = -1;
+		int iEnd = -1;
+		int index = 0;
+		while (index < buf.length()) {
+			if ((iStart = buf.indexOf("<", index)) == -1
+					|| (iEnd = buf.indexOf(">", index)) == -1) {
+				res += buf.substring(index);
+				break;
+			} else {
+				res += buf.substring(index, iStart);
+				index = iEnd + 1;
 			}
-			m_Content.add(res);
+		}
+		return res;
+
+	}
+	
+	private void GetHideContent(){
+		m_Content=DeleteHtmlLabel(m_HtmlContent);
+		for(String str:m_HtmlContentList){
+			m_ContentList.add(DeleteHtmlLabel(str));
 		}
 	}
 	
@@ -242,9 +259,9 @@ public class extraction {
 	 * @param buf
 	 * @return
 	 */
-	private String GetCharCnt(ArrayList<String> buf,int base){
+	private String GetCharCnt(String buf,int base){
 		String res="";
-		if(buf.size()<=0){
+		if(buf=="" || buf.length()<=0){
 			while(res.length()<6)
 				res+="0";
 			while(res.length()<9)
@@ -255,33 +272,31 @@ public class extraction {
 			String chnsymbol="！，。？；：、（）“”";
 			String samplechar="\r\t\n ";
 			int sumS = 0, sumT = 0, sumE = 0, sumO = 0, sumN = 0, sumB = 0;//简体，繁体, 英文数目, 其他字符, 数字, 标点符号
-			for(String str:buf){
-				char[] ch=str.toCharArray();
-				for(int i=0;i<ch.length;i++){
-					char c=ch[i];
-					if(c<0x7f){		//ascii非扩展字符
-						if(Character.isDigit(c))
-							sumN+=1;
-						else if(Character.isLetter(c))
-							sumE+=1;
-						else if(engsymbol.indexOf(c)!=-1)
-							sumB+=1;
-						else if(samplechar.indexOf(c)==-1)//不是回车换行或者空格制表符
-							sumO+=1;
-					}else{
-						int num=hanzi_feature_class(c);
-						if(num==1) 
-							sumS+=1;
-						else if(num==2 || num==3) 
-							sumT+=1;
-						else if(num==4){
-							if(chnsymbol.indexOf(c)!=-1)
-								sumB+=1;
-							else
-								sumO+=1;
-						}else
-							sumO+=1;
-					}
+			char[] ch = buf.toCharArray();
+			for (int i = 0; i < ch.length; i++) {
+				char c = ch[i];
+				if (c < 0x7f) { // ascii非扩展字符
+					if (Character.isDigit(c))
+						sumN += 1;
+					else if (Character.isLetter(c))
+						sumE += 1;
+					else if (engsymbol.indexOf(c) != -1)
+						sumB += 1;
+					else if (samplechar.indexOf(c) == -1)// 不是回车换行或者空格制表符
+						sumO += 1;
+				} else {
+					int num = hanzi_feature_class(c);
+					if (num == 1)
+						sumS += 1;
+					else if (num == 2 || num == 3)
+						sumT += 1;
+					else if (num == 4) {
+						if (chnsymbol.indexOf(c) != -1)
+							sumB += 1;
+						else
+							sumO += 1;
+					} else
+						sumO += 1;
 				}
 			}
 			res += GetCodeChar(sumS / base);//简体
@@ -300,9 +315,9 @@ public class extraction {
 	 * @param buf
 	 * @return
 	 */
-	private String GetSampTradArrange(ArrayList<String> buf,int base){
+	private String GetSampTradArrange(String buf,int base){
 		String res="";
-		if(buf.size()<=0){
+		if(buf=="" || buf.length()<=0){
 			res+="0";
 			while(res.length()<3)
 				res+="*";
@@ -310,27 +325,25 @@ public class extraction {
 		}else{
 			int sumE=0,sumC=0,sum=0;
 			int PRECHAR=NUMBER;
-			for(String str:buf){
-				char[] ch=str.toCharArray();
-				for(int i=0;i<ch.length;i++){
-					char c=ch[i];
-					if(c<0x7f){//空格 || 非汉字 || 英文
-						if(PRECHAR==CHINESE)
+			char[] ch = buf.toCharArray();
+			for (int i = 0; i < ch.length; i++) {
+				char c = ch[i];
+				if (c < 0x7f) {// 空格 || 非汉字 || 英文
+					if (PRECHAR == CHINESE)
+						sum++;
+					PRECHAR = OTHERWORD;
+				} else {// 汉字
+					int label = hanzi_feature_class(c);
+					if (label == 1)
+						PRECHAR = CHINESE;
+					else {
+						if (PRECHAR == CHINESE)
 							sum++;
-						PRECHAR=OTHERWORD;
-					}else{//汉字
-						int label=hanzi_feature_class(c);
-						if(label==1)
-							PRECHAR=CHINESE;
-						else{
-							if(PRECHAR==CHINESE)
-								sum++;
-							PRECHAR=OTHERWORD;
-						}
+						PRECHAR = OTHERWORD;
 					}
 				}
 			}
-			res+= GetCodeChar(sum / base);
+			res += GetCodeChar(sum / base);
 			while (res.length() < 3) //后2位空着没计算
 				res += '*';
 			return res;
@@ -343,9 +356,9 @@ public class extraction {
 	 * @param base
 	 * @return
 	 */
-	private String GetKeyWords(ArrayList<String> buf,int base){
+	private String GetKeyWords(String buf,int base){
 		String res="";
-		if(buf.size()<=0){
+		if(buf=="" || buf.length()<=0){
 			while(res.length()<4) res+="0";
 			while(res.length()<6) res+="*";
 			return res;
@@ -357,19 +370,17 @@ public class extraction {
 			lKeyWord.add("[a-zA-Z]+://.+?[^\\s\"'<>/]+");
 			int WordCnt=0;
 			for(String reg:lKeyWord){
-				int c=0;
-				for(String str:buf){
-					if(WordCnt==1){//第二个正则
-						int html_st=str.indexOf("<html");
-						if(html_st!=-1){
-							int html_end=str.indexOf(">",html_st);
-							String url=str.substring(html_st, html_end);
-							c+=CountMatchedWords(url, reg);
-							continue;
-						}
+				int c = 0;
+				if (WordCnt == 1) {// 第二个正则
+					int html_st = buf.indexOf("<html");
+					if (html_st != -1) {
+						int html_end = buf.indexOf(">", html_st);
+						String url = buf.substring(html_st, html_end);
+						c = CountMatchedWords(url, reg);
+						continue;
 					}
-					c+=CountMatchedWords(str, reg);
 				}
+				c = CountMatchedWords(buf, reg);
 				res += GetCodeChar(c / base);//各个字符串出现的次数
 				WordCnt+=1;
 			}
@@ -378,18 +389,16 @@ public class extraction {
 		}
 	}
 	
-	private String GetContentKeyWords(ArrayList<String> buf,int base){
+	private String GetContentKeyWords(String buf,int base){
 		String res="";
-		if(buf.size()<=0){
+		if(buf=="" || buf.length()<=0){
 			while (res.length() < 1) res += '0';
 			while (res.length() < 5) res += '*';
 			return res;
 		}else{
 			String reg="[0-9]+";
 			int c=0;
-			for(String str:buf){
-				c+=CountMatchedWords(str, reg);	
-			}
+			c=CountMatchedWords(buf, reg);	
 			res += GetCodeChar(c / base);
 			while(res.length()<5) res+="*";
 			return res;
@@ -403,24 +412,22 @@ public class extraction {
 	 * @param isgood
 	 * @return
 	 */
-	private String GetChineseKeyWords(ArrayList<String> buf,int base,boolean isgood){
+	private String GetChineseKeyWords(String buf,int base,boolean isgood){
 		String res="";
-		if(buf.size()<=0){
+		if(buf=="" || buf.length()<=0){
 			return "0";
 		}else{
 			String data="";
-			for(String str:buf){
-				char[] ch=str.toCharArray();
-				for(int i=0;i<ch.length;i++){
-					char c=ch[i];
-					if(c>0x7f){
-						int label=hanzi_feature_class(c);
-						if(label==1){
-							data+=c;
-						}
+			char[] ch = buf.toCharArray();
+			for (int i = 0; i < ch.length; i++) {
+				char c = ch[i];
+				if (c > 0x7f) {
+					int label = hanzi_feature_class(c);
+					if (label == 1) {
+						data += c;
 					}
 				}
-			}	
+			}
 			String filename="";
 			String goodfilename="";
 			String badfilename="";
@@ -439,14 +446,13 @@ public class extraction {
 				}
 			}
 			File file=new File(filename);
-			if(file.exists()){
+			if(file.exists()){		
 				try {
-					Scanner input=new Scanner(file);
-					while(input.hasNextLine()){
-						String str=input.nextLine();
-						keyword.add(str);
-					}
-				} catch (FileNotFoundException e) {
+					BufferedReader bw = new BufferedReader(new FileReader(file));
+					String sLine = "";
+					while ((sLine = bw.readLine()) != null)
+						keyword.add(sLine);
+				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -468,24 +474,23 @@ public class extraction {
 	 * @param base
 	 * @return
 	 */
-	private String GetSpaceCnt(ArrayList<String> buf,int base){
+	private String GetSpaceCnt(String buf,int base){
 		String res="";
-		if(buf.size()<=0){
+		if(buf=="" || buf.length()<=0){
 			return "0";
 		}else{
-			int cnt=0;
-			for(String str:buf){
-				char[] ch=str.toCharArray();
-				for(int i=0;i<ch.length;i++){
-					char c=ch[i];
-					if(c<0x7f){
-						if(c==' ') cnt+=1;
-					}else{
-						String cc=String.valueOf(c);
-						byte[] han=cc.getBytes();
-						if(han[0]==(byte)0xa1 && han[1]==(byte)0xa1)
-							cnt+=1;
-					}
+			int cnt = 0;
+			char[] ch = buf.toCharArray();
+			for (int i = 0; i < ch.length; i++) {
+				char c = ch[i];
+				if (c < 0x7f) {
+					if (c == ' ')
+						cnt += 1;
+				} else {
+					String cc = String.valueOf(c);
+					byte[] han = cc.getBytes();
+					if (han[0] == (byte) 0xa1 && han[1] == (byte) 0xa1)
+						cnt += 1;
 				}
 			}
 			res = GetCodeChar(cnt / base);
@@ -530,17 +535,12 @@ public class extraction {
 	
 	private String GetOtherInfo(){
 		String res="";  
-		int iContentlen=0;
-		for(String str:m_HtmlContent){
-			iContentlen+=str.length();
-		}
+		int iContentlen=m_HtmlContent.length();
 		iContentlen/=50;
 		res+=GetCodeChar(iContentlen);
 		res+="000";
 		iContentlen=0;
-		for(String str:m_Content){
-			iContentlen+=str.length();
-		}
+		iContentlen+=m_Content.length();
 		res+=GetCodeChar(iContentlen);
 		res+=GetCodeChar((m_HeaderLen*16)/(100*1024));
 		while(res.length()<7)
@@ -554,20 +554,18 @@ public class extraction {
 	 * @param base
 	 * @return
 	 */
-	private String GetHtmlChineseWords(ArrayList<String> buf,int base){
+	private String GetHtmlChineseWords(String buf,int base){
 		String res="";
-		if(buf.size()<=0){
+		if(buf=="" || buf.length()<=0){
 			return "0";
-		}else{
-			int iWordCnt=0;
-			for(String str:buf){
-				char[] ch=str.toCharArray();
-				for(int i=0;i<ch.length;i++){
-					char c=ch[i];
-					int label=hanzi_feature_class(c);
-					if(label==1){
-						iWordCnt+=1;
-					}
+		} else {
+			int iWordCnt = 0;
+			char[] ch = buf.toCharArray();
+			for (int i = 0; i < ch.length; i++) {
+				char c = ch[i];
+				int label = hanzi_feature_class(c);
+				if (label == 1) {
+					iWordCnt += 1;
 				}
 			}
 			res+=GetCodeChar(iWordCnt/base);
@@ -575,11 +573,104 @@ public class extraction {
 		}
 	}
 	
+	/***
+	 * 解释html文档
+	 * @param base
+	 * @return
+	 */
+	private String HtmlTreeParse(int base){
+		String res="";
+		return res;
+	}
+	
+	/***
+	 * 获取发件人域信息
+	 * @param base
+	 * @return
+	 */
 	private String GetFromAddrInfo(int base){
 		String res="";
 		String[] topdomain= {".net.cn", ".org.cn", ".edu.cn", ".com.cn", ".gov.cn", ".com.hk", ".com.tw"};
 		String[] normaldomain = {".com", ".cn", ".net", ".org", ".net", ".tw", ".hk", ".edu", ".gov"};
-		/*------------------@前面的字符串排列统计-----------------------*/
+		for(String str:m_From){
+			System.out.println(str);
+		}
+		if(m_From.size()<=0){
+			return "0000";
+		}else{
+			String sMailFrom=m_From.get(0).split(" ")[1];			
+			int label=sMailFrom.indexOf("@");
+			String sUser=sMailFrom.substring(0,label-1);
+			String sMailAddress=sMailFrom.substring(label+1);
+			System.out.println(sUser+"&&"+sMailAddress);
+			
+			
+			int num=0;
+			if(!sMailFrom.contains("@")) 
+				return "0000";
+			else{			
+				char[] ch=sUser.toCharArray();
+				/*------------------@前面的字符串排列统计-----------------------*/
+				int PRECHAR=OTHERWORD;
+				for(int i=0;i<ch.length;i++){
+					char c=ch[i];
+					if(Character.isLetter(c)){ 
+						if(PRECHAR==NUMBER)
+							num+=1;
+						PRECHAR=ENGLISH;
+					}else if(Character.isDigit(c)){
+						PRECHAR=NUMBER;
+					}
+				}
+				res+=GetCodeChar(num/base);
+				
+				/*-----------------异常ID检查---------------------*/
+				num=0;
+				int[] eng={0,0};
+				int[] dig={0,0};
+				int index=0;
+				for(int i=0;i<ch.length;i++){
+					char c=ch[i];
+					if(c=='_' && index==0) {index+=1; continue; }
+					if(Character.isLetter(c)) eng[index]+=1;
+					if(Character.isDigit(c)) dig[index]+=1;
+				}
+				if((dig[0]>0 || dig[1]>0) && eng[0]>0 && eng[1]>0) num=1;
+				if((eng[0]>0 || eng[1]>0) && dig[0]>0 && dig[1]>0) num=1;
+				res+=GetCodeChar(num/base);
+				
+				/*-----------------域的级数统计------------------*/
+				num=0;
+				String sTmp="";
+				for(String str:topdomain){
+					if((index=sMailFrom.indexOf(str))!=-1){
+						num=2;
+						sTmp=sMailFrom.substring(0,index);
+						break;
+					}else{
+						num=1;						
+					}			
+				}
+				if(num==1) sTmp=sMailFrom;
+				ch=sTmp.toCharArray();
+				for(int i=0;i<ch.length;i++){
+					char c=ch[i];
+					if(c=='.')
+						num+=1;
+				}
+				res+=GetCodeChar(num/base);
+				
+				/*-------------------常用域统计------------------*/
+				num=0;
+				for(String str:normaldomain){
+					if(sMailAddress.lastIndexOf(str)!=-1){
+						num=1;
+						break;
+					}
+				}
+				res+=GetCodeChar(num/base);
+			}		
+		}	
 		return res;
 	}
 	
@@ -591,7 +682,7 @@ public class extraction {
 	 */
 	private String GetSubjectCode(){
 		String res="";
-		res+=GetShortLine(m_Subject,1);//1
+		res+=GetShortLine(m_SubjectList,1);//1
 		res+=GetCharCnt(m_Subject,1);//9
 		res+=GetSampTradArrange(m_Subject,1);//3
 		res+=GetKeyWords(m_Subject,1);//6
@@ -611,17 +702,19 @@ public class extraction {
 	 */
 	private String GetContentCode(){
 		String res="";
-		res+=GetShortLine(m_Content,1);//1
+		res+=GetShortLine(m_ContentList,1);//1
 		res+=GetCharCnt(m_Content,10);//9
 		res+=GetSampTradArrange(m_Content,1);//3
 		res+=GetKeyWords(m_HtmlContent,1);//6
 		res+=GetContentKeyWords(m_Content, 1);//5
 		res+=GetChineseKeyWords(m_Content,1,true);//1
 		res+=GetChineseKeyWords(m_Content,1,false);//1
+		res+=HtmlTreeParse(1);//20
 		res+=GetAttachInfoCode(m_AttachNames,1);//6
 		res+=GetOtherInfo();//7
 		res+=GetHtmlChineseWords(m_HtmlContent, 10);//1
 		res+=GetFromAddrInfo(1);//4
+		System.out.println("Code正文长度:"+res.length());
 		while(res.length()<m_ContentCodeLen)
 			res+="*";
 		return res;
@@ -640,10 +733,10 @@ public class extraction {
 	
 	private void Release(){
 		m_HeaderLen=0;
-		m_Content.clear();
-		m_Subject.clear();
+		m_Content="";
+		m_Subject="";
 		m_AttachNames.clear();
-		m_HtmlContent.clear();
+		m_HtmlContent="";
 	}
 	
 	/***
@@ -656,13 +749,9 @@ public class extraction {
 		GetFileContent(filePath);
 		GetHideContent();
 		System.out.println("正文内容：");
-		for(String str:m_Content){
-			System.out.println(str);
-		}
+		System.out.println(m_Content);
 		System.out.println("html内容：");
-		for(String str:m_HtmlContent){
-			System.out.println(str);
-		}
+		System.out.println(m_HtmlContent);
 		m_Code=GetAllCode();
 		return  m_Code;
 	}
