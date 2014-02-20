@@ -1,0 +1,19 @@
+# -*- coding: utf-8 -*-
+import sae
+import urllib
+import urllib2
+
+def app(environ, start_response):
+    status = '200 OK'
+    response_headers = [('Content-type', 'text/plain')]
+    start_response(status, response_headers)
+    sText='詹姆斯拿到赛季新高的42分，热火客场117-106击败小牛。'
+    sSinaServer='http://segment.sae.sina.com.cn/urlclient.php'
+    payload = urllib.urlencode([('context', sText),])
+    args = urllib.urlencode([('encoding', 'GB18030'),])
+    sUrl='?'.join([sSinaServer,args])
+    Result=urllib2.urlopen(sUrl, payload).read()
+	Result.encoding='gbk' 
+    return Result
+
+application = sae.create_wsgi_app(app)
