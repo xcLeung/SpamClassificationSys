@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -17,6 +18,8 @@ import org.python.antlr.PythonParser.return_stmt_return;
 import org.python.antlr.ast.boolopType;
 import org.python.constantine.Constant;
 import org.python.google.common.primitives.UnsignedBytes;
+
+import ICTCLAS.I3S.AC.ICTCLAS50;
 
 import com.kenai.jaffl.struct.Struct.Unsigned8;
 
@@ -765,7 +768,7 @@ public class extraction {
 		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1-decode\\attach.eml.txt";
 		System.out.println("特征提取文件："+filePath);
 		extraction myExtraction=new extraction();
-		String testString=myExtraction.feature_extraction(filePath);
-		System.out.println(testString);
+		//String testString=myExtraction.feature_extraction(filePath);
+		//System.out.println(testString);
 	}
 }

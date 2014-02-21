@@ -266,7 +266,7 @@ public class Decode_Mail {
 		interpreter.execfile("src\\email_decode\\decodemail.py");
 		PyFunction func = (PyFunction)interpreter.get("decodebody_str",PyFunction.class);
 		
-		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1\\froms1.eml";
+		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1\\attach.eml";
 		File file = new File(filePath);	
 		if(file.exists()){
 			String path=file.getParent();
