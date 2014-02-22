@@ -19,8 +19,6 @@ import org.python.antlr.ast.boolopType;
 import org.python.constantine.Constant;
 import org.python.google.common.primitives.UnsignedBytes;
 
-import ICTCLAS.I3S.AC.ICTCLAS50;
-
 import com.kenai.jaffl.struct.Struct.Unsigned8;
 
 public class extraction {
@@ -42,6 +40,8 @@ public class extraction {
 	private String m_Subject="";
 	private int m_SubjectCodeLen=32;
 	private ArrayList<String> m_From=new ArrayList<String>();
+	
+	private String m_Chinese="";
 	
 	private int m_HeaderLen=0;
 	
@@ -135,6 +135,33 @@ public class extraction {
 		for(String str:m_HtmlContentList){
 			m_ContentList.add(DeleteHtmlLabel(str));
 		}
+	}
+	
+	/***
+	 * 获取简体中文文档+标点符号
+	 * @param buf
+	 * @return
+	 */
+	private String GetChineseContent(String buf){
+		String sText="";
+		String sSymbol=",.?!\"\'()[]{}+-*/%@_-~#$^&;:<>";
+		char[] ch=buf.toCharArray();
+		for(int i=0;i<ch.length;i++){
+			char c=ch[i];
+			if((sSymbol.indexOf(c))!=-1){
+				sText+=c;
+			}else{
+				int label=hanzi_feature_class(c);
+				if(label==1 || label==4){
+					sText+=c;
+				}
+			}
+		}
+		return sText;
+	}
+	
+	public String GetmChinese(){
+		return m_Chinese;
 	}
 	
 	/***
@@ -734,12 +761,24 @@ public class extraction {
 		return str;
 	}
 	
-	private void Release(){
+	public void Release(){
 		m_HeaderLen=0;
 		m_Content="";
 		m_Subject="";
 		m_AttachNames.clear();
 		m_HtmlContent="";
+		m_Chinese="";
+	}
+	
+	/***
+	 * 获取邮件所有信息
+	 * @param sFilePath
+	 * @return
+	 */
+	public String GetEmailContent(String sFilePath){
+		GetFileContent(sFilePath);
+		GetHideContent();
+		return GetChineseContent(m_Content);
 	}
 	
 	/***
@@ -749,8 +788,11 @@ public class extraction {
 	 */
 	public String feature_extraction(String filePath){
 		Release();
-		GetFileContent(filePath);
-		GetHideContent();
+		//GetFileContent(filePath);
+		//GetHideContent();
+		//m_Chinese=GetChineseContent(m_Content);
+		m_Chinese=GetEmailContent(filePath);
+		System.out.println("简体中文："+m_Chinese);
 		System.out.println("正文内容：");
 		System.out.println(m_Content);
 		System.out.println("html内容：");
@@ -764,11 +806,11 @@ public class extraction {
 	 * @param args
 	 * @throws FileNotFoundException
 	 */
-	public static void main(String[] args) throws FileNotFoundException {	
+	public static void main(String[] args){	
 		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1-decode\\attach.eml.txt";
 		System.out.println("特征提取文件："+filePath);
 		extraction myExtraction=new extraction();
-		//String testString=myExtraction.feature_extraction(filePath);
-		//System.out.println(testString);
+		String testString=myExtraction.feature_extraction(filePath);
+		System.out.println(testString);
 	}
 }
