@@ -1,5 +1,6 @@
 package Main;
 
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -11,8 +12,8 @@ import org.python.antlr.PythonParser.return_stmt_return;
 import org.python.core.PyFunction;
 import org.python.util.PythonInterpreter;
 
+
 import email_decode.Decode_Mail;
-import email_decode.Decode_UI;
 import feature_extraction.extraction;
 
 public class Main {
@@ -22,15 +23,15 @@ public class Main {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		final UI frame = new UI("中文垃圾邮件过滤系统", 400, 550);
-        frame.setVisible(true);
         
         //解码按钮事件
         frame.btnEmailDecode.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		
         		/*遍历文件夹*/
-        		String filePath = frame.dictionaryText.getText();
-        		if(filePath==""){return ;}
+        		String filePath = "";
+        		filePath=frame.dictionaryText.getText();
+        		if(filePath.length()<=0){return ;}
         		try {
 					dealFiles_decode(filePath);
 				} catch (FileNotFoundException e1) {
@@ -47,7 +48,7 @@ public class Main {
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method
 				String filePath = frame.dictionaryText.getText()+"-decode";
-				if(filePath==""){return ;}
+				if(filePath.length()<=0){return ;}
 				try{
 					//System.out.println(filePath);
 					dealFiles_feature_extraction(filePath);
@@ -57,8 +58,18 @@ public class Main {
 					// TODO Auto-generated catch block
 					//e1.printStackTrace();
 					return ;
-				}
-				
+				}				
+			}
+		});
+        
+        //中文分词
+        frame.btnDivideWord.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				String filePath = frame.txtDividewordText.getText();
+				if(filePath.length()<=0){return ;}
 			}
 		});
         
@@ -123,6 +134,17 @@ public class Main {
 		}else{
 			System.out.println("文件夹不存在！");
 			return ;
+		}
+	}
+	
+	/***
+	 * 中文分词
+	 * @param filePath
+	 */
+	private static void dealFiles_divideword(String filePath){
+		File root = new File(filePath);
+		if(root.exists() && root.isDirectory()){
+			
 		}
 	}
 	
