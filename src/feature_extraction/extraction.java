@@ -8,10 +8,18 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.lang.model.element.Element;
+import javax.sound.midi.Receiver;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.omg.CORBA.PUBLIC_MEMBER;
 import org.python.antlr.PythonParser.else_clause_return;
 import org.python.antlr.PythonParser.return_stmt_return;
@@ -44,6 +52,8 @@ public class extraction {
 	private String m_Chinese="";
 	
 	private int m_HeaderLen=0;
+	
+	private int m_RcptCnt=0;
 	
 	private ArrayList<String> m_AttachNames=new ArrayList<String>();
 	
@@ -80,8 +90,10 @@ public class extraction {
 						}
 						System.out.println("发件人："+result);
 						continue;
-					}
-					else if(sLine.contains("Attachment")){//附件
+					}else if(iLineCnt==6){//收件人
+						String[] Reciever=sLine.split("&&");
+						m_RcptCnt=Reciever.length;
+					}else if(sLine.contains("Attachment")){//附件
 						int iStartIndex=sLine.indexOf(":");
 						String sTmp=sLine.substring(iStartIndex+1);
 						String[] result=sTmp.split("&&");
@@ -610,6 +622,53 @@ public class extraction {
 	 */
 	private String HtmlTreeParse(int base){
 		String res="";
+		if(m_HtmlContent.length()<=0){
+			while(res.length()<2) res+="0";
+			while(res.length()<8) res+="*";
+			while(res.length()<10) res+="0";
+			while(res.length()<14) res+="0";
+			while(res.length()<20) res+="*";
+			return res;
+		}
+		/**********这里的数据根据需求修改*************/
+		String[] ssKeyWord={"color","font-size"};
+		String[] ssTagWord={"input","select","strong","a"};
+		int[] iiKWSum={0,0};
+		int[] iiTWSum={0,0,0,0};
+		int iMinfontsize=5;
+		int nowfontsize = 10000;
+		/*******************************************/
+		int iSmallfont=0;
+		Document doc = Jsoup.parse(m_HtmlContent);
+		Set<String> attrValsSet=new HashSet<String>();
+		Elements es=doc.getAllElements();
+		for(org.jsoup.nodes.Element e:es){
+			nowfontsize = 10000;
+			String sText=e.text();
+			for(int i=0;i<ssKeyWord.length;i++){
+				attrValsSet.clear();
+				String sAttrVal=e.attr(ssKeyWord[i]);
+				if(sAttrVal.length()>0){
+					if(!attrValsSet.contains(sAttrVal)){
+						iiKWSum[i]+=1;
+						attrValsSet.add(sAttrVal);
+					}
+				}
+			}
+		}
+		for(int i=0;i<ssTagWord.length;i++){
+			Elements tags=doc.getElementsByTag(ssTagWord[i]);
+			iiTWSum[i]=tags.size();
+		}
+		
+		for(int i=0;i<iiKWSum.length;i++)//2
+			res+=GetCodeChar(iiKWSum[i]/base);		
+		while(res.length()<8) res+="*";
+		res+=GetCodeChar(m_RcptCnt/base);//转发数
+		res+=GetCodeChar(iSmallfont/10);//小字体数,base=10
+		for(int i=0;i<iiTWSum.length;i++)//4
+			res+=GetCodeChar(iiTWSum[i]/base);
+		while(res.length()<20) res+="*";
 		return res;
 	}
 	
@@ -762,6 +821,7 @@ public class extraction {
 	}
 	
 	public void Release(){
+		m_RcptCnt=0;
 		m_HeaderLen=0;
 		m_Content="";
 		m_Subject="";
