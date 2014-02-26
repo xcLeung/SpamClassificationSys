@@ -9,6 +9,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -19,6 +21,7 @@ import javax.sound.midi.Receiver;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.omg.CORBA.PUBLIC_MEMBER;
 import org.python.antlr.PythonParser.else_clause_return;
@@ -26,6 +29,7 @@ import org.python.antlr.PythonParser.return_stmt_return;
 import org.python.antlr.ast.boolopType;
 import org.python.constantine.Constant;
 import org.python.google.common.primitives.UnsignedBytes;
+import org.python.modules.math;
 
 import com.kenai.jaffl.struct.Struct.Unsigned8;
 
@@ -615,6 +619,49 @@ public class extraction {
 		}
 	}
 	
+	private String StrParseInt(String value){
+		String res="";
+		char[] ch=value.toCharArray();
+		boolean bNum=true;
+		for(int i=0;i<ch.length;i++){
+			char c=ch[i];
+			if(Character.isDigit(c)){
+				res+=c;
+			}
+			else
+				break;
+		}
+		return res;
+	}
+	
+	/***
+	 * 解析style属性
+	 * @param style
+	 * @return
+	 */
+	private Map<String, String> GetStyleAttr(String style){
+		int iIndex=-1,iEndIndex=-1;
+		Map<String, String> mAttr=new Hashtable<String,String>();
+		iIndex=style.indexOf("color");
+		String sValue="";
+		if(iIndex!=-1){
+			iIndex+=6;
+			iEndIndex=style.indexOf(";",iIndex);
+			sValue=style.substring(iIndex,iEndIndex).trim();
+			mAttr.put("color", sValue);
+		}
+		
+		iIndex=style.indexOf("font-size");
+		if(iIndex!=-1){
+			iIndex+=10;
+			iEndIndex=style.indexOf(";",iIndex);
+			sValue=style.substring(iIndex,iEndIndex).trim();
+			sValue=StrParseInt(sValue);
+			mAttr.put("font-size", sValue);
+		}
+		return mAttr;
+	}
+	
 	/***
 	 * 解释html文档
 	 * @param base
@@ -631,7 +678,6 @@ public class extraction {
 			return res;
 		}
 		/**********这里的数据根据需求修改*************/
-		String[] ssKeyWord={"color","font-size"};
 		String[] ssTagWord={"input","select","strong","a"};
 		int[] iiKWSum={0,0};
 		int[] iiTWSum={0,0,0,0};
@@ -641,21 +687,80 @@ public class extraction {
 		int iSmallfont=0;
 		Document doc = Jsoup.parse(m_HtmlContent);
 		Set<String> attrValsSet=new HashSet<String>();
+		Map<String, String> mAttr=new Hashtable<String,String>();
 		Elements es=doc.getAllElements();
 		for(org.jsoup.nodes.Element e:es){
-			nowfontsize = 10000;
-			String sText=e.text();
-			for(int i=0;i<ssKeyWord.length;i++){
-				attrValsSet.clear();
-				String sAttrVal=e.attr(ssKeyWord[i]);
-				if(sAttrVal.length()>0){
-					if(!attrValsSet.contains(sAttrVal)){
-						iiKWSum[i]+=1;
-						attrValsSet.add(sAttrVal);
+			if(e.tagName()=="#root")//根节点
+				continue;
+			mAttr.clear();
+			System.out.println("属性："+e.attributes());
+			
+			/***************判断小字体文本*****************/
+			for(int i=0;i<e.childNodeSize();i++){
+				if(e.childNodes().get(i) instanceof TextNode){
+					String sText=e.childNodes().get(i).toString();
+					if(sText.length()>0){
+						if(e.tagName()=="font"){
+							String sSize=e.attr("size");
+							if(sSize.length()>0){
+								if(Integer.parseInt(sSize)<iMinfontsize)
+									iSmallfont+=sText.length();							
+							}
+						}else{
+							String sStyle=e.attr("style");
+							if(sStyle.length()>0){
+								mAttr=GetStyleAttr(sStyle);
+								if(mAttr.containsKey("font-size")){
+									String sSize=mAttr.get("font-size");
+									if(Integer.parseInt(sSize)<iMinfontsize)
+										iSmallfont+=sText.length();
+								}
+							}
+						}		
+					}
+				}
+			}
+				
+			/************统计font标签,color,size属性***************/
+			if(e.tagName()=="font"){
+				String sColor=e.attr("color");
+				String sSize=e.attr("size");
+				if(sColor.length()>0){
+					if(!attrValsSet.contains(sColor)){
+						iiKWSum[0]+=1;
+						attrValsSet.add(sColor);
+					}
+				}
+				if(sSize.length()>0){
+					sSize=StrParseInt(sSize);
+					if(!attrValsSet.contains(sSize)){
+						iiKWSum[1]+=1;
+						attrValsSet.add(sSize);
+					}
+				}
+			}
+			
+			/***********统计普通标签style属性color,font-size的值************/
+			String sStyle=e.attr("style");
+			if(sStyle.length()>0){
+				mAttr=GetStyleAttr(sStyle);
+				if(mAttr.containsKey("font-size")){
+					String sSize=mAttr.get("font-size");
+					if(!attrValsSet.contains(sSize)){
+						iiKWSum[1]+=1;
+						attrValsSet.add(sSize);
+					}
+				}
+				if(mAttr.containsKey("color")){
+					String sColor=mAttr.get("color");
+					if(!attrValsSet.contains(sColor)){
+						iiKWSum[0]+=1;
+						attrValsSet.add(sColor);
 					}
 				}
 			}
 		}
+		
 		for(int i=0;i<ssTagWord.length;i++){
 			Elements tags=doc.getElementsByTag(ssTagWord[i]);
 			iiTWSum[i]=tags.size();
@@ -825,9 +930,12 @@ public class extraction {
 		m_HeaderLen=0;
 		m_Content="";
 		m_Subject="";
-		m_AttachNames.clear();
 		m_HtmlContent="";
 		m_Chinese="";
+		m_AttachNames.clear();
+		m_ContentList.clear();
+		m_HtmlContentList.clear();
+		m_SubjectList.clear();
 	}
 	
 	/***
