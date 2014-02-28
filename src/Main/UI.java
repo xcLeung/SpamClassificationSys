@@ -17,8 +17,8 @@ public class UI extends JFrame{
 	
 	JLabel dictionaryLabel = new JLabel(label);
 	JLabel fileLabel1=new JLabel(label);
-	JLabel fileLabel2=new JLabel("请输入1类文件路径");
-	JLabel wordLabel=new JLabel("请输入2类文件路径");
+	JLabel fileLabel2=new JLabel("输入 1 类文件路径");
+	JLabel wordLabel=new JLabel("输入 2 类文件路径");
 	
 	JTextField dictionaryText = new JTextField(TEXTLENGTH);
 	JTextField txtExtraction = new JTextField(TEXTLENGTH);

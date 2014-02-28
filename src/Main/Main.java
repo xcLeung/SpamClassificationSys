@@ -156,7 +156,8 @@ public class Main {
 		File root1 = new File(filePath1);
 		File root2 = new File(filePath2);
 		if(root1.exists() && root1.isDirectory() && root2.exists() && root2.isDirectory()){
-			DivideWord oDivideWord=new DivideWord(filePath1, filePath2);
+			File[] files=new File[2];
+			DivideWord oDivideWord=new DivideWord(files);
 			oDivideWord.DealWords();
 		}else{
 			System.out.println("文件夹不存在！");
