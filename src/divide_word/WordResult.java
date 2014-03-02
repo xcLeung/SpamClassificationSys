@@ -17,8 +17,11 @@ public class WordResult {
 	private File m_FileDict;
 	private File[] m_Files;
 	private int m_FilesSum=0;
-	private ArrayList<String> m_Words=new ArrayList<String>();
+	
 	private Map<String, Integer> m_WordAllMap = new HashMap<String,Integer>();
+	
+	private int m_ClassIndex=-1;
+	private ArrayList<String> m_Words=new ArrayList<String>();
 	
 	public WordResult(){
 		
