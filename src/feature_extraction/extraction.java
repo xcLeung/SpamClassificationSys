@@ -53,6 +53,8 @@ public class extraction {
 	private int m_SubjectCodeLen=32;
 	private ArrayList<String> m_From=new ArrayList<String>();
 	
+	private String m_PinYinString="";
+	
 	private String m_Chinese="";
 	
 	private int m_HeaderLen=0;
@@ -946,7 +948,17 @@ public class extraction {
 	public String GetEmailContent(String sFilePath){
 		GetFileContent(sFilePath);
 		GetHideContent();
-		return GetChineseContent(m_Content);
+		String sText = GetChineseContent(m_Content);
+		CheckFeature cf = new CheckFeature ();
+		m_PinYinString=cf.getHanyutoPinyin(sText);
+		System.out.println("∆¥“Ù£∫"+m_PinYinString);
+		try {
+			return cf.getFtToJt(sText);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return "";
+		}
 	}
 	
 	/***
