@@ -649,7 +649,16 @@ public class extraction {
 		if(iIndex!=-1){
 			iIndex+=6;
 			iEndIndex=style.indexOf(";",iIndex);
-			sValue=style.substring(iIndex,iEndIndex).trim();
+			sValue = "";
+			while(iIndex<style.length()){
+				if(Character.isDigit(style.charAt(iIndex))){
+					sValue += style.charAt(iIndex);
+					iIndex+=1;
+				}
+				else{
+					break;
+				}
+			}
 			mAttr.put("color", sValue);
 		}
 		
@@ -657,7 +666,16 @@ public class extraction {
 		if(iIndex!=-1){
 			iIndex+=10;
 			iEndIndex=style.indexOf(";",iIndex);
-			sValue=style.substring(iIndex,iEndIndex).trim();
+			sValue = "";
+			while(iIndex<style.length()){
+				if(Character.isDigit(style.charAt(iIndex))){
+					sValue += style.charAt(iIndex);
+					iIndex+=1;
+				}
+				else{
+					break;
+				}
+			}
 			sValue=StrParseInt(sValue);
 			mAttr.put("font-size", sValue);
 		}
@@ -714,6 +732,7 @@ public class extraction {
 								mAttr=GetStyleAttr(sStyle);
 								if(mAttr.containsKey("font-size")){
 									String sSize=mAttr.get("font-size");
+									if(sSize.length()<=0) continue;
 									if(Integer.parseInt(sSize)<iMinfontsize)
 										iSmallfont+=sText.length();
 								}
@@ -794,11 +813,20 @@ public class extraction {
 		if(m_From.size()<=0){
 			return "0000";
 		}else{
-			String sMailFrom=m_From.get(0).split(" ")[1];			
-			int label=sMailFrom.indexOf("@");
-			String sUser=sMailFrom.substring(0,label-1);
-			String sMailAddress=sMailFrom.substring(label+1);
-			System.out.println(sUser+"&&"+sMailAddress);
+			String[] tmp =  m_From.get(0).split(" ");
+			String sMailFrom = "";
+			String sUser = "";
+			String sMailAddress = "";
+			if( tmp.length >1){
+				sMailFrom= tmp[1];			
+				int label=sMailFrom.indexOf("@");
+				sUser=sMailFrom.substring(0,label-1);
+				sMailAddress=sMailFrom.substring(label+1);
+				System.out.println(sUser+"&&"+sMailAddress);
+			}
+			else{
+				return "0000";
+			}
 			
 			
 			int num=0;
