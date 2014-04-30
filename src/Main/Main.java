@@ -11,9 +11,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.python.antlr.PythonParser.else_clause_return;
+import org.python.antlr.PythonParser.file_input_return;
 import org.python.antlr.PythonParser.return_stmt_return;
 import org.python.core.PyFunction;
 import org.python.util.PythonInterpreter;
+
+import Test.Bayes;
 
 import divide_word.DivideWord;
 
@@ -90,9 +93,10 @@ public class Main {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				String sFilePath = frame.txtTest.getText();
-				if(sFilePath.length()<=0) return ;
-				dealFiles_Test(sFilePath);
+				String sFilePath = frame.txtTest1.getText();
+				String sFilePath2 = frame.txtTest2.getText();
+				if(sFilePath.length()<=0 || sFilePath2.length()<=0) return ;
+				dealFiles_Test(sFilePath,sFilePath2);
 			}
 		});
         
@@ -226,10 +230,21 @@ public class Main {
 	 * 训练集，测试集实验
 	 * @param sFilePath
 	 */
-	private static void dealFiles_Test(String sFilePath){
+	private static void dealFiles_Test(String sFilePath,String sFilePath2){
 		File root = new File(sFilePath);
-		if(root.exists() && root.isDirectory()){
-			
+		File root2 = new File(sFilePath2);
+		Boolean flag = root.exists() && root.isDirectory() && root2.exists() && root2.isDirectory();
+		if(flag){
+			if(getFileExtention(sFilePath) == ".arff" && getFileExtention(sFilePath2) == ".arff"){
+				Bayes bayes = new Bayes();
+				bayes.Run(sFilePath,sFilePath2);
+			}else{
+				System.out.println("不是arff文件");
+				return ;
+			}
+		}else{
+			System.out.println("文件不存在!");
+			return ;
 		}
 	}
 	
@@ -252,5 +267,19 @@ public class Main {
 					fw = null;
 				}
 			}
+	}
+	
+	/***
+	 * 获取文件名后缀
+	 * @param sPath
+	 * @return
+	 */
+	private static String getFileExtention(String sPath){
+		int pos = sPath.indexOf('.');
+		if(pos!=-1){
+			String res = sPath.substring(pos);
+			return res;
+		}
+		return "";
 	}
 }

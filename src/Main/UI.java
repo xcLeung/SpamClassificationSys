@@ -17,7 +17,8 @@ public class UI extends JFrame{
 	
 	JLabel dictionaryLabel = new JLabel(label);
 	JLabel fileLabel1=new JLabel(label);
-	JLabel fileLabel3=new JLabel("请输入数据集文件夹");
+	JLabel fileLabel3=new JLabel("请输入训练集文件.arff");
+	JLabel fileLabel4=new JLabel("请输入测试集文件.arff");
 	JLabel fileLabel2=new JLabel("输入 1 类文件路径");
 	JLabel wordLabel=new JLabel("输入 2 类文件路径");
 	
@@ -25,7 +26,8 @@ public class UI extends JFrame{
 	JTextField txtExtraction = new JTextField(TEXTLENGTH);
 	JTextField txtDividewordText = new JTextField(TEXTLENGTH);
 	JTextField txtDividewordText2 = new JTextField(TEXTLENGTH);
-	JTextField txtTest = new JTextField(TEXTLENGTH);
+	JTextField txtTest1 = new JTextField(TEXTLENGTH);
+	JTextField txtTest2 = new JTextField(TEXTLENGTH);
 	
 	JButton btnEmailDecode = new JButton("邮件解码");
 	JButton btnFeatureExtractionButton = new JButton("特征提取");
@@ -39,7 +41,8 @@ public class UI extends JFrame{
     JPanel panelWord=new JPanel();
     JPanel panelDivideWord = new JPanel();
     JPanel panelDivideWord2 = new JPanel();
-    JPanel panelTest = new JPanel();
+    JPanel panelTest1 = new JPanel();
+    JPanel panelTest2 = new JPanel();
     JPanel panelExit = new JPanel();
     JPanel panelCenter = new JPanel();
     
@@ -79,11 +82,16 @@ public class UI extends JFrame{
     	
         add(panelNorth,BorderLayout.NORTH);
         
-        panelTest.setLayout(new FlowLayout(FlowLayout.LEFT));
-        panelTest.add(fileLabel3);
-        panelTest.add(txtTest);
-        panelTest.add(btnTest);
-        panelCenter.add(panelTest,BorderLayout.NORTH);
+        panelTest1.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panelTest1.add(fileLabel3);
+        panelTest1.add(txtTest1);
+        panelTest2.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panelTest2.add(fileLabel4);
+        panelTest2.add(txtTest2);
+        panelTest2.add(btnTest);
+        
+        panelCenter.add(panelTest1,BorderLayout.NORTH);
+        panelCenter.add(panelTest2,BorderLayout.CENTER);
         
         add(panelCenter,BorderLayout.CENTER);
         
