@@ -2,11 +2,14 @@ package Main;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 import org.python.antlr.PythonParser.flow_stmt_return;
@@ -21,6 +24,7 @@ public class UI extends JFrame{
 	JLabel fileLabel4=new JLabel("请输入测试集文件.arff");
 	JLabel fileLabel2=new JLabel("输入 1 类文件路径");
 	JLabel wordLabel=new JLabel("输入 2 类文件路径");
+	JLabel arffLabel = new JLabel("请输入arff文件夹");
 	
 	JTextField dictionaryText = new JTextField(TEXTLENGTH);
 	JTextField txtExtraction = new JTextField(TEXTLENGTH);
@@ -28,12 +32,14 @@ public class UI extends JFrame{
 	JTextField txtDividewordText2 = new JTextField(TEXTLENGTH);
 	JTextField txtTest1 = new JTextField(TEXTLENGTH);
 	JTextField txtTest2 = new JTextField(TEXTLENGTH);
+	JTextField txtArff = new JTextField(TEXTLENGTH);
 	
 	JButton btnEmailDecode = new JButton("邮件解码");
 	JButton btnFeatureExtractionButton = new JButton("特征提取");
 	JButton btnDivideWord=new JButton("分词处理");
 	JButton Exitbtn = new JButton("退出");
 	JButton btnTest = new JButton("实验");
+	JButton btnArff = new JButton("合成arff");
 	
 	JPanel panelNorth=new JPanel();
 	JPanel panelFileSource = new JPanel();//面板
@@ -45,6 +51,13 @@ public class UI extends JFrame{
     JPanel panelTest2 = new JPanel();
     JPanel panelExit = new JPanel();
     JPanel panelCenter = new JPanel();
+    JPanel panelTest = new JPanel();
+    JPanel panelArff = new JPanel();
+    
+    JPanel panelRadioBtn = new JPanel();
+    JRadioButton jrb1 = new JRadioButton("垃圾",true);
+    JRadioButton jrb2 = new JRadioButton("非垃圾",false);
+    ButtonGroup group = new ButtonGroup();
     
     public UI(){}
     
@@ -54,6 +67,12 @@ public class UI extends JFrame{
     	this.setLayout(new BorderLayout());
     	this.setVisible(true);
     	
+    	group.add(jrb1);
+    	group.add(jrb2);
+    	panelRadioBtn.setLayout(new GridLayout(3,1));
+    	panelRadioBtn.add(jrb1);
+    	panelRadioBtn.add(jrb2);
+    	
     	panelNorth.setLayout(new BorderLayout());
     	
     	panelFileSource.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -61,11 +80,14 @@ public class UI extends JFrame{
     	panelFileSource.add(dictionaryText);
     	panelFileSource.add(btnEmailDecode);
     	panelNorth.add(panelFileSource,BorderLayout.NORTH);
-    	
+    	   	
+      	
     	panelExtraction.setLayout(new FlowLayout(FlowLayout.LEFT)); 	
     	panelExtraction.add(fileLabel1);
     	panelExtraction.add(txtExtraction);
     	panelExtraction.add(btnFeatureExtractionButton);
+    	// 单选按钮
+    	panelExtraction.add(panelRadioBtn);
     	panelNorth.add(panelExtraction,BorderLayout.CENTER);
         
     	panelWord.setLayout(new BorderLayout());   	
@@ -82,6 +104,7 @@ public class UI extends JFrame{
     	
         add(panelNorth,BorderLayout.NORTH);
         
+        panelTest.setLayout(new BorderLayout());
         panelTest1.setLayout(new FlowLayout(FlowLayout.LEFT));
         panelTest1.add(fileLabel3);
         panelTest1.add(txtTest1);
@@ -90,8 +113,15 @@ public class UI extends JFrame{
         panelTest2.add(txtTest2);
         panelTest2.add(btnTest);
         
-        panelCenter.add(panelTest1,BorderLayout.NORTH);
-        panelCenter.add(panelTest2,BorderLayout.CENTER);
+        panelTest.add(panelTest1,BorderLayout.NORTH);
+        panelTest.add(panelTest2,BorderLayout.CENTER);
+        panelCenter.add(panelTest,BorderLayout.NORTH);
+        
+        panelArff.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panelArff.add(arffLabel);
+        panelArff.add(txtArff);
+        panelArff.add(btnArff);
+        panelCenter.add(panelArff,BorderLayout.CENTER);
         
         add(panelCenter,BorderLayout.CENTER);
         

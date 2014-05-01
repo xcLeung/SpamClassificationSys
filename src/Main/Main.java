@@ -4,8 +4,11 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.NumericShaper.Range;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilePermission;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,6 +31,8 @@ public class Main {
 	/**
 	 * @param args
 	 */
+	
+	private static boolean IsRush = true;
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -106,6 +111,43 @@ public class Main {
                 System.exit(0);
             }
         });
+        
+        //合成arff
+        frame.btnArff.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				String sPathString = frame.txtArff.getText();
+				if(sPathString.length()<=0) return ;
+				try {
+					RefreshArff(sPathString);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+        
+        frame.jrb1.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				IsRush = true;
+				System.out.println("选中垃圾");
+			}
+		});
+        
+        frame.jrb2.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				IsRush = false;
+				System.out.println("选中非垃圾");
+			}
+		});
 	}
 	
 	/**
@@ -130,6 +172,40 @@ public class Main {
 			}
 		}else{
 			System.out.println("文件夹不存在！");
+		}
+	}
+	
+	/***
+	 * 合成arff
+	 * @param sPath
+	 * @throws IOException 
+	 */
+	private static void RefreshArff(String sPath) throws IOException{
+		File root = new File(sPath);
+		if(root.exists() && root.isDirectory()){
+			File fileRes=new File(sPath+"resultArff.arff");
+			fileRes.delete();
+			String res = "";
+			if (fileRes.createNewFile()==true){
+				File[] files = root.listFiles();
+				for(int i=0;i<files.length;i++){
+					File file = files[i];
+					String tmp = readByFileRead(file);
+					if(i!=0){
+						int pos = tmp.indexOf("@data");
+						tmp = tmp.substring(pos + 5);
+					}
+					res += tmp;
+				}
+				writeByFileWrite(fileRes.getAbsolutePath(), res);
+			}else{
+				System.out.println("创建文件失败");
+				return ;
+			}
+		}
+		else{
+			System.out.println("文件夹不存在");
+			return ;
 		}
 	}
 	
@@ -173,11 +249,12 @@ public class Main {
 					String dataString = "";
 					attLen = s.length();
 					for(int i=0;i<s.length();i++){
-						if(i==s.length()-1)
-							dataString += s.charAt(i);
-						else
-							dataString += (s.charAt(i) + ",");
+						dataString += (s.charAt(i) + ",");
 					}
+					if(IsRush)  // 分类
+						dataString += "1";
+					else 
+						dataString += "0";
 					featureString+=dataString + "\r\n";
 				}
 				System.out.println(featureString);
@@ -196,6 +273,7 @@ public class Main {
 				for(int i=0;i<attLen;i++){
 					attrTmp += String.format("@ATTRIBUTE attr%s %s\r\n", i, arrVal);
 				}
+				attrTmp += String.format("@ATTRIBUTE class {0,1}");
 				writeByFileWrite(fileArff.getAbsolutePath(),relationString + attrTmp + featureString);
 			}
 			else{
@@ -233,9 +311,10 @@ public class Main {
 	private static void dealFiles_Test(String sFilePath,String sFilePath2){
 		File root = new File(sFilePath);
 		File root2 = new File(sFilePath2);
-		Boolean flag = root.exists() && root.isDirectory() && root2.exists() && root2.isDirectory();
+		Boolean flag = root.exists() && root2.exists();
 		if(flag){
-			if(getFileExtention(sFilePath) == ".arff" && getFileExtention(sFilePath2) == ".arff"){
+			System.out.println(getFileExtention(sFilePath).equals(".arff"));
+			if(getFileExtention(sFilePath).equals(".arff") && getFileExtention(sFilePath2).equals(".arff")){
 				Bayes bayes = new Bayes();
 				bayes.Run(sFilePath,sFilePath2);
 			}else{
@@ -267,6 +346,37 @@ public class Main {
 					fw = null;
 				}
 			}
+	}
+	
+	/***
+	 * 读取文件
+	 * @param f
+	 * @return
+	 */
+	private static String readByFileRead(File f){
+		String resString = "";
+		FileReader fr = null;
+		try {
+			fr = new FileReader(f);
+			BufferedReader br = new BufferedReader(fr);
+			String s = "";
+			try {
+				s=br.readLine();
+				while(s!=null){
+					resString += "\r\n" + s;
+					s = br.readLine();
+				}
+				return resString;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return "";
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return "";
+		}
 	}
 	
 	/***

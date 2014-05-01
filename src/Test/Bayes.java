@@ -30,7 +30,7 @@ public class Bayes {
             ArffLoader atf = new ArffLoader();
             atf.setFile(inputFile);
 
-            instancesTrain = atf.getDataSet();             //读入文件haiha
+            instancesTrain = atf.getDataSet();
 
             //在使用样本之前一定要首先设置instances的classIndex，否则在使用instances对象是会抛出异常
             instancesTrain.setClassIndex(instancesTrain.numAttributes() - 1);
@@ -51,7 +51,7 @@ public class Bayes {
 
             //创建文件
 
-            WritableWorkbook book = Workbook.createWorkbook(new File("StatisResult.xls"));
+            WritableWorkbook book = Workbook.createWorkbook(new File(GetFilePath(sPath) +  "StatisResult.xls"));
 
             //天生名为“第一页”的工作表，参数0表示这是第一页
 
@@ -59,7 +59,7 @@ public class Bayes {
 
             //在Label对象的构造子中指名单元格位置是第一列第一行(0,0) 以及单元格内容为是否垃圾邮件
 
-            Label label = new Label(0, 0, "是否垃圾邮件");
+            Label label = new Label(0, 0, "邮件");
 
             //将定义好的单元格添加到工作表中
 
@@ -67,30 +67,29 @@ public class Bayes {
 
 
             //添加分类算法名
-            label = new Label(3, 0, "Bayes");
+            label = new Label(1, 0, "Bayes");
             sheet.addCell(label);
-            label = new Label(4, 0, "本身是不是垃圾邮件");
+            label = new Label(2, 0, "本身是不是垃圾邮件");
             sheet.addCell(label);
-            //j48的测试样例
             right = 0;
-            /*
-             * 2.初始化分类算法（Classify method)
-             */
 
             //Bayes的测试样例
 
             right = 0;
             NaiveBayes bayes = new NaiveBayes();
 
-            bayes.buildClassifier(instancesTrain);
+            bayes.buildClassifier(instancesTrain);  // 训练分类器
 
               for (int i = 0; i < sum; i++) {
 
+            	label = new Label(0,i+1,String.format("邮件%s", i+1));
+            	sheet.addCell(label);
+            	  
                 if (bayes.classifyInstance(instancesTest.instance(i)) == 1.0) {
-                    label = new Label(3, i + 1, "YES");
+                    label = new Label(1, i + 1, "YES");
                     sheet.addCell(label);
                 } else {
-                    label = new Label(3, i + 1, "NO");
+                    label = new Label(1, i + 1, "NO");
                     sheet.addCell(label);
                 }
                 if (bayes.classifyInstance(instancesTest.instance(i)) == instancesTest.instance(i).classValue()) //如果预测值和答案值相等（测试语料中的分类列提供的须为正确答案，结果才有意义）
@@ -99,7 +98,7 @@ public class Bayes {
                 }
 
             }
-              jxl.write.Number number = new jxl.write.Number(3, (int)sum + 1, (right / sum));
+            jxl.write.Number number = new jxl.write.Number(1, (int)sum + 1, (right / sum));
             sheet.addCell(number);
 
 
@@ -107,15 +106,15 @@ public class Bayes {
              for (int i = 0; i < sum; i++) {
 
                 if (instancesTest.instance(i).classValue() == 1.0) {
-                    label = new Label(4, i + 1, "YES");
+                    label = new Label(2, i + 1, "YES");
                     sheet.addCell(label);
                 } else {
-                    label = new Label(4, i + 1, "NO");
+                    label = new Label(2, i + 1, "NO");
                     sheet.addCell(label);
                 }
 
             }
-            number = new jxl.write.Number(4, (int)sum + 1, 1);
+            number = new jxl.write.Number(2, (int)sum + 1, 1);
             sheet.addCell(number);
 
             book.write();
@@ -124,6 +123,15 @@ public class Bayes {
         } catch (Exception e) {
             e.printStackTrace();
         }
+	}
+	
+	private String GetFilePath(String path){
+		int pos = path.lastIndexOf("\\");
+		if(pos!=-1){
+			String res = path.substring(0,pos+1);
+			return res;
+		}
+		return path;
 	}
 	
 }
