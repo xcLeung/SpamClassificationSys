@@ -81,10 +81,9 @@ public class Main {
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
 				String filePath1 = frame.txtDividewordText.getText();
-				String filePath2 = frame.txtDividewordText2.getText();
-				if(filePath1.length()<=0 || filePath2.length()<=0){return ;}
+				if(filePath1.length()<=0){return ;}
 				try {
-					dealFiles_divideword(filePath1,filePath2);
+					dealFiles_divideword(filePath1);
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -291,13 +290,18 @@ public class Main {
 	 * @param filePath
 	 * @throws IOException 
 	 */
-	private static void dealFiles_divideword(String filePath1,String filePath2) throws IOException{
+	private static void dealFiles_divideword(String filePath1) throws IOException{
 		File root1 = new File(filePath1);
-		File root2 = new File(filePath2);
-		if(root1.exists() && root1.isDirectory() && root2.exists() && root2.isDirectory()){
-			File[] files={root1,root2};
-			DivideWord oDivideWord=new DivideWord(files);
-			oDivideWord.DealWords();
+		if(root1.exists() && root1.isDirectory()){
+			File[] allfiles = root1.listFiles();
+			File[] files = new File[allfiles.length];
+			int cnt=0;
+			for(File file:allfiles){
+				if(file.exists() && file.isDirectory()){
+					files[cnt++] = file;
+				}
+			}
+			DivideWord oDivideWord=new DivideWord(files,cnt);
 		}else{
 			System.out.println("文件夹不存在！");
 			return ;
@@ -333,7 +337,7 @@ public class Main {
 	 * @param _sContent
 	 * @throws IOException
 	 */
-	private static void writeByFileWrite(String _sDestFile, String _sContent) throws IOException {
+	public static void writeByFileWrite(String _sDestFile, String _sContent) throws IOException {
 			FileWriter fw = null;
 			try {
 				fw = new FileWriter(_sDestFile);
@@ -353,7 +357,7 @@ public class Main {
 	 * @param f
 	 * @return
 	 */
-	private static String readByFileRead(File f){
+	public static String readByFileRead(File f){
 		String resString = "";
 		FileReader fr = null;
 		try {

@@ -22,14 +22,12 @@ public class UI extends JFrame{
 	JLabel fileLabel1=new JLabel(label);
 	JLabel fileLabel3=new JLabel("请输入训练集文件.arff");
 	JLabel fileLabel4=new JLabel("请输入测试集文件.arff");
-	JLabel fileLabel2=new JLabel("输入 1 类文件路径");
-	JLabel wordLabel=new JLabel("输入 2 类文件路径");
+	JLabel wordLabel=new JLabel("输入分类文件夹路径");
 	JLabel arffLabel = new JLabel("请输入arff文件夹");
 	
 	JTextField dictionaryText = new JTextField(TEXTLENGTH);
 	JTextField txtExtraction = new JTextField(TEXTLENGTH);
 	JTextField txtDividewordText = new JTextField(TEXTLENGTH);
-	JTextField txtDividewordText2 = new JTextField(TEXTLENGTH);
 	JTextField txtTest1 = new JTextField(TEXTLENGTH);
 	JTextField txtTest2 = new JTextField(TEXTLENGTH);
 	JTextField txtArff = new JTextField(TEXTLENGTH);
@@ -92,11 +90,9 @@ public class UI extends JFrame{
         
     	panelWord.setLayout(new BorderLayout());   	
     	panelDivideWord.setLayout(new FlowLayout(FlowLayout.LEFT)); 	
-    	panelDivideWord.add(fileLabel2);
-    	panelDivideWord.add(txtDividewordText);
     	panelDivideWord2.setLayout(new FlowLayout(FlowLayout.LEFT));
     	panelDivideWord2.add(wordLabel);
-    	panelDivideWord2.add(txtDividewordText2);
+    	panelDivideWord2.add(txtDividewordText);
     	panelDivideWord2.add(btnDivideWord);
     	panelWord.add(panelDivideWord,BorderLayout.NORTH);
     	panelWord.add(panelDivideWord2,BorderLayout.CENTER);

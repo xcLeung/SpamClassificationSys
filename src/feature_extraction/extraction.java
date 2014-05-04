@@ -162,12 +162,13 @@ public class extraction {
 	 */
 	private String GetChineseContent(String buf){
 		String sText="";
-		String sSymbol=",.?!\"\'()[]{}+-*/%@_-~#$^&;:<>";
+		String sSymbol=",.?!\"\'()[]{}+-*/%@_-~#$^&;:<>，。？！“”‘’（）【】『』——……《》";
 		char[] ch=buf.toCharArray();
 		for(int i=0;i<ch.length;i++){
 			char c=ch[i];
 			if((sSymbol.indexOf(c))!=-1){
-				sText+=c;
+				//sText+=c;
+				continue;
 			}else{
 				int label=hanzi_feature_class(c);
 				if(label==1 || label==4){
@@ -175,11 +176,12 @@ public class extraction {
 				}
 			}
 		}
-		return sText;
+		m_Chinese = sText;
+		return m_Chinese;
 	}
 	
 	public String GetmChinese(){
-		return m_Chinese;
+		return GetChineseContent(m_Subject) + " " + m_Chinese;
 	}
 	
 	/***
@@ -718,12 +720,19 @@ public class extraction {
 			/***************判断小字体文本*****************/
 			for(int i=0;i<e.childNodeSize();i++){
 				if(e.childNodes().get(i) instanceof TextNode){
+					Boolean flag = true;
 					String sText=e.childNodes().get(i).toString();
 					if(sText.length()>0){
 						if(e.tagName()=="font"){
 							String sSize=e.attr("size");
 							if(sSize.length()>0){
-								if(Integer.parseInt(sSize)<iMinfontsize)
+								for(int j=0;j<sSize.length();j++){
+									char ch = sSize.charAt(j);
+									if(!Character.isDigit(ch)){
+										flag = false;
+									}
+								}
+								if(flag && Integer.parseInt(sSize)<iMinfontsize)
 									iSmallfont+=sText.length();							
 							}
 						}else{
@@ -1015,7 +1024,7 @@ public class extraction {
 	 * @throws FileNotFoundException
 	 */
 	public static void main(String[] args){	
-		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\emailtest1-decode\\attach.eml.txt";
+		String filePath = "F:\\MailProject\\2014-2-23邮件收集\\垃圾\\广告-decode\\test1.eml.txt";
 		System.out.println("特征提取文件："+filePath);
 		extraction myExtraction=new extraction();
 		String testString=myExtraction.feature_extraction(filePath);
