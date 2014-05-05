@@ -302,6 +302,7 @@ public class Main {
 				}
 			}
 			DivideWord oDivideWord=new DivideWord(files,cnt);
+			oDivideWord.DealWord();
 		}else{
 			System.out.println("文件夹不存在！");
 			return ;

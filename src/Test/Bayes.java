@@ -44,6 +44,7 @@ public class Bayes {
 
             double sum = instancesTest.numInstances(), right = 0.0f;           //测试语料实例数
 
+            System.out.println("测试总数量" + sum);
 
             /*
              * 3.根据分类算法训练并且测试每个样本

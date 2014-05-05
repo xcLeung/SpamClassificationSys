@@ -45,6 +45,8 @@ public class DivideWord{
 		public int compareTo(MyWord o) {
 			// TODO Auto-generated method stub
 			double detal = this.m_Val - o.m_Val;
+			if(this == null) return 1;
+			if(o == null) return -1;
 			if(detal > 0)
 				return -1;
 			else {
@@ -58,7 +60,7 @@ public class DivideWord{
 	private Map<String, String> m_IGStaticMap=new Hashtable<String,String>();
 	private ArrayList<Integer> m_FileSumList = new ArrayList<Integer>();
 	
-	private int MAXNUM = 10;
+	public static int MAXNUM = 20;
 	
 	public DivideWord(File[] dfiles,int cnt){
 		m_ClassSum = cnt;
@@ -91,15 +93,22 @@ public class DivideWord{
 			obj.Set(str, iIGVal);
 			objs[cnt++] = obj;
 		}
-		Arrays.sort(objs);
+		System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
+		Arrays.sort(objs,0,cnt);
 		String sText = "";
 		for(int i=0;i<MAXNUM;i++){
 			sText += objs[i].GetWord();
-			if(i<9)
+			if(i<MAXNUM - 1)
 				sText += "\r\n";
 		}
 		try {
-			Main.writeByFileWrite("./src/txt/word.txt", sText);
+			File file = new File("./src/txt/word.txt");
+			if(file.exists())
+				file.delete();
+			if(file.createNewFile()){
+				Main.writeByFileWrite(file.getAbsolutePath(), sText);
+				System.out.println("分词结果文件夹:" + file.getAbsolutePath());			
+			}	
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -119,8 +128,17 @@ public class DivideWord{
 		String[] strs = ICTCLASStringProcess(sContent).split(" ");
 		for(String str:strs){
 			if(str=="") continue;
-			if(WordList.contains(str)) continue;
-			WordList.add(str);
+			String wordtype = "";
+			String word = "";
+			int pos = str.indexOf("/");
+			if(pos!=-1){
+				wordtype = str.substring(pos + 1);
+				word = str.substring(0,pos);
+			}
+			if(word.length()>1 && (wordtype.equals("n") || wordtype.equals("v"))){
+				if(WordList.contains(word)) continue;
+				WordList.add(word);
+			}
 		}
 		return WordList;
 	}
@@ -230,7 +248,7 @@ public class DivideWord{
 			//设置词性标注集(0 计算所二级标注集，1 计算所一级标注集，2 北大二级标注集，3 北大一级标注集)
 			oICTCLAS50.ICTCLAS_SetPOSmap(2);
 			//导入用户词典前分词
-			byte nativeBytes[] = oICTCLAS50.ICTCLAS_ParagraphProcess(sInput.getBytes("GB2312"), 0, 0);//分词处理
+			byte nativeBytes[] = oICTCLAS50.ICTCLAS_ParagraphProcess(sInput.getBytes("GB2312"), 0, 1);//分词处理
 			System.out.println(nativeBytes.length);
 			String nativeStr = new String(nativeBytes, 0, nativeBytes.length, "GB2312");
 			System.out.println("分词前:" + sInput);
@@ -248,7 +266,7 @@ public class DivideWord{
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		String filePath = "F:\\MailProject\\梁祥超-毕业设计\\中文分词测试";
+		String filePath = "F:\\MailProject\\2014-2-23邮件收集\\分词文件夹";
 		File root1 = new File(filePath);
 		if(root1.exists() && root1.isDirectory()){
 			File[] allfiles = root1.listFiles();

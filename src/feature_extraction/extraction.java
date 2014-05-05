@@ -31,7 +31,11 @@ import org.python.constantine.Constant;
 import org.python.google.common.primitives.UnsignedBytes;
 import org.python.modules.math;
 
+import Main.Main;
+
 import com.kenai.jaffl.struct.Struct.Unsigned8;
+
+import divide_word.DivideWord;
 
 public class extraction {
 	
@@ -45,7 +49,7 @@ public class extraction {
 	private ArrayList<String> m_HtmlContentList=new ArrayList<String>();
 	private String m_Content="";
 	private String m_HtmlContent="";
-	private int m_ContentCodeLen=64;
+	private int m_ContentCodeLen=84;
 	private String m_Code;
 	
 	private ArrayList<String> m_SubjectList=new ArrayList<String>();
@@ -62,6 +66,8 @@ public class extraction {
 	private int m_RcptCnt=0;
 	
 	private ArrayList<String> m_AttachNames=new ArrayList<String>();
+	
+	private ArrayList<String> m_DivideWord = new ArrayList<String>();
 	
 	/***
 	 * 根据格式获取需要的信息
@@ -162,7 +168,7 @@ public class extraction {
 	 */
 	private String GetChineseContent(String buf){
 		String sText="";
-		String sSymbol=",.?!\"\'()[]{}+-*/%@_-~#$^&;:<>，。？！“”‘’（）【】『』——……《》";
+		String sSymbol=",.?!\"\'()[]{}+-*/%@_-~#$^&;:<>，。？！“”‘’（）【】『』——……《》、";
 		char[] ch=buf.toCharArray();
 		for(int i=0;i<ch.length;i++){
 			char c=ch[i];
@@ -181,7 +187,7 @@ public class extraction {
 	}
 	
 	public String GetmChinese(){
-		return GetChineseContent(m_Subject) + " " + m_Chinese;
+		return GetChineseContent(m_Subject)  + GetChineseContent(m_Content);
 	}
 	
 	/***
@@ -495,17 +501,8 @@ public class extraction {
 					keyword.add(str);
 				}
 			}
-			File file=new File(filename);
-			if(file.exists()){		
-				try {
-					BufferedReader bw = new BufferedReader(new FileReader(file));
-					String sLine = "";
-					while ((sLine = bw.readLine()) != null)
-						keyword.add(sLine);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			for(String str:m_DivideWord){
+				keyword.add(str);
 			}
 			int cnt=0;
 			for(String str:keyword){
@@ -514,6 +511,28 @@ public class extraction {
 					cnt++;
 			}
 			res += GetCodeChar(cnt / base);//总数
+			return res;
+		}
+	}
+	
+	/***
+	 * 特征词特征
+	 * @param buf
+	 * @param base
+	 * @return
+	 */
+	private String GetDivideWordCnt(String buf,int base){
+		String res = "";
+		int sum = DivideWord.MAXNUM;
+		if(buf == "" || buf.length()<=0){
+			while(res.length()<=sum) res+="0";
+			return res;
+		}else{
+			for(String str:m_DivideWord){
+				int cnt = CountMatchedWords(buf, str);
+				res += GetCodeChar(cnt / base);
+			}
+			while(res.length()<=sum) res+="0";
 			return res;
 		}
 	}
@@ -942,6 +961,7 @@ public class extraction {
 		res+=GetContentKeyWords(m_Content, 1);//5
 		res+=GetChineseKeyWords(m_Content,1,true);//1
 		res+=GetChineseKeyWords(m_Content,1,false);//1
+		res+=GetDivideWordCnt(GetmChinese(), 1);//20
 		res+=HtmlTreeParse(1);//20
 		res+=GetAttachInfoCode(m_AttachNames,1);//6
 		res+=GetOtherInfo();//7
@@ -975,6 +995,19 @@ public class extraction {
 		m_ContentList.clear();
 		m_HtmlContentList.clear();
 		m_SubjectList.clear();
+		m_DivideWord.clear();
+	}
+	
+	private void GetDivideWord(){
+		String filename="./src/txt/word.txt";
+		File file=new File(filename);
+		if(file.exists()){
+			String sWord = Main.readByFileRead(file);
+			String[] sWords = sWord.split("\r\n");
+			for(String str:sWords){
+				m_DivideWord.add(str);
+			}
+		}
 	}
 	
 	/***
@@ -1009,6 +1042,7 @@ public class extraction {
 		//GetHideContent();
 		//m_Chinese=GetChineseContent(m_Content);
 		m_Chinese=GetEmailContent(filePath);
+		GetDivideWord();
 		System.out.println("简体中文："+m_Chinese);
 		System.out.println("正文内容：");
 		System.out.println(m_Content);
